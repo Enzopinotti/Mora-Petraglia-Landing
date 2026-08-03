@@ -1,0 +1,68 @@
+@use "sass:map";
+@use "./variables" as vars;
+
+@mixin respond-to($bp) {
+  @if map.has-key(vars.$breakpoints, $bp) {
+    @media (min-width: map.get(vars.$breakpoints, $bp)) {
+      @content;
+    }
+  }
+}
+
+@mixin respond-below($bp) {
+  @if map.has-key(vars.$breakpoints, $bp) {
+    @media (max-width: calc(map.get(vars.$breakpoints, $bp) - 1px)) {
+      @content;
+    }
+  }
+}
+
+@mixin container {
+  width: 100%;
+  max-width: vars.$container-max-width;
+  margin: 0 auto;
+  padding: 0 20px;
+
+  @include respond-to('tablet') {
+    padding: 0 40px;
+  }
+
+  @include respond-to('desktop') {
+    padding: 0 60px;
+  }
+}
+
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin section-padding {
+  padding-top: 60px;
+  padding-bottom: 60px;
+
+  @include respond-to('tablet') {
+    padding-top: 90px;
+    padding-bottom: 90px;
+  }
+
+  @include respond-to('desktop') {
+    padding-top: 130px;
+    padding-bottom: 130px;
+  }
+}
+
+// Glassmorphism mixin
+@mixin glass-card($dark: false) {
+  @if $dark {
+    background: vars.$glass-bg-dark;
+    border: 1px solid vars.$glass-border-dark;
+  } @else {
+    background: vars.$glass-bg-light;
+    border: 1px solid vars.$glass-border-light;
+  }
+  backdrop-filter: vars.$glass-blur;
+  -webkit-backdrop-filter: vars.$glass-blur;
+  box-shadow: vars.$glass-shadow;
+}

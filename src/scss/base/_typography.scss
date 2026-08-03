@@ -1,0 +1,81 @@
+@use "../abstracts/variables" as vars;
+
+h1, h2, h3, h4, h5, h6, .font-display {
+  font-family: vars.$font-display;
+  font-weight: 400;
+  line-height: 1.15;
+  color: vars.$carbon;
+}
+
+.text-editorial-italic {
+  font-family: vars.$font-display;
+  font-style: italic;
+}
+
+.eyebrow {
+  font-family: vars.$font-body;
+  font-size: 0.75rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: vars.$text-muted;
+  display: block;
+  margin-bottom: 0.75rem;
+}
+
+.section-title {
+  font-size: 2.25rem;
+  font-style: italic;
+
+  @media (min-width: 768px) {
+    font-size: 3.25rem;
+  }
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem 2rem;
+  font-family: vars.$font-body;
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  transition: vars.$transition-smooth;
+  cursor: pointer;
+
+  &-primary {
+    background-color: vars.$stone-dark;
+    color: vars.$warm-white-pure;
+    border: 1px solid vars.$stone-dark;
+
+    &:hover {
+      background-color: vars.$carbon;
+      border-color: vars.$carbon;
+    }
+  }
+
+  &-outline {
+    background-color: transparent;
+    color: vars.$carbon;
+    border: 1px solid vars.$linen-border;
+
+    &:hover {
+      background-color: vars.$carbon;
+      color: vars.$warm-white-pure;
+      border-color: vars.$carbon;
+    }
+  }
+
+  &-light-outline {
+    background-color: transparent;
+    color: vars.$warm-white-pure;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+
+    &:hover {
+      background-color: vars.$warm-white-pure;
+      color: vars.$carbon;
+      border-color: vars.$warm-white-pure;
+    }
+  }
+}

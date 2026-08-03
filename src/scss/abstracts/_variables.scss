@@ -1,0 +1,54 @@
+// SCSS Variables — Mora Petraglia
+@use "sass:color";
+
+// Refined Palette: Warm Light Neutrals, Deep Obsidian Dark Sections & Fine Accents
+$dark-obsidian: #0e100d;     // Ultra rich obsidian black for dark sections (Explorar el universo)
+$dark-bg: #141712;           // Dark olive-tinted section background
+$dark-surface: #1a1e18;      // Surface dark
+$dark-border: rgba(255, 255, 255, 0.12);
+
+$warm-white: #f8f6f0;
+$warm-white-pure: #ffffff;
+$cream-light: #f2ece1;
+$cream-bg: #e8e0d0;
+$linen-border: #d8cebc;
+
+$stone-dark: #323a2d;        // Deep Olive Accent
+$stone-mid: #525e4c;
+$stone-light: #83927b;
+
+$carbon: #161513;           // Primary text
+$text-sub: #45403a;          // Subtitle text
+$text-muted: #7d766e;        // Muted text
+
+$accent-coral: #df5840;
+$accent-turquoise: #2a8b94;
+$accent-gold: #d4a359;
+
+// Ultra-Subtle Glassmorphism System (Minimal tint, crystal blur)
+$glass-bg-transparent: rgba(255, 255, 255, 0.08);
+$glass-bg-light: rgba(248, 246, 240, 0.25);
+$glass-bg-dark: rgba(14, 16, 13, 0.35);
+$glass-border-light: rgba(255, 255, 255, 0.35);
+$glass-border-dark: rgba(255, 255, 255, 0.12);
+$glass-blur: blur(12px);
+$glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+
+// Typography
+$font-display: 'Cormorant Garamond', Georgia, serif;
+$font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+
+// Layout
+$container-max-width: 1440px;
+
+// Transitions
+$transition-smooth: all 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+$transition-fast: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+
+// Breakpoints
+$breakpoints: (
+  'mobile': 480px,
+  'tablet': 768px,
+  'desktop': 1024px,
+  'large': 1440px
+);

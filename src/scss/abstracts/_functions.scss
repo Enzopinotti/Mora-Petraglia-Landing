@@ -1,0 +1,15 @@
+@use "sass:color";
+@use "./variables" as vars;
+
+// Color helper functions replacing deprecated darken / lighten
+@function darken-color($color, $amount) {
+  @return color.adjust($color, $lightness: -$amount);
+}
+
+@function lighten-color($color, $amount) {
+  @return color.adjust($color, $lightness: $amount);
+}
+
+@function mix-colors($color1, $color2, $weight: 500%) {
+  @return color.mix($color1, $color2, $weight);
+}

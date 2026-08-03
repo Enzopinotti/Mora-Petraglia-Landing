@@ -1,0 +1,231 @@
+@use "sass:color";
+@use "../abstracts/variables" as vars;
+@use "../abstracts/mixins" as mix;
+
+.main-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  width: 100%;
+  transition: background-color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+  background: transparent;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+
+  /* Over Hero — High contrast white mode */
+  &--transparent {
+    background: rgba(14, 16, 13, 0.25);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-bottom-color: rgba(255, 255, 255, 0.18);
+
+    .main-header__logo {
+      color: vars.$warm-white-pure;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+    }
+
+    .main-header__nav a {
+      color: rgba(255, 255, 255, 0.9);
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+
+      &::after {
+        background-color: vars.$warm-white-pure;
+      }
+
+      &:hover {
+        color: vars.$warm-white-pure;
+      }
+    }
+
+    .main-header__cart-btn {
+      color: vars.$warm-white-pure;
+    }
+
+    .main-header__toggle span {
+      background-color: vars.$warm-white-pure;
+    }
+  }
+
+  /* Scrolled past hero — Standard light mode */
+  &--scrolled {
+    background: rgba(248, 246, 240, 0.92);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid vars.$linen-border;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+
+    .main-header__logo {
+      color: vars.$carbon;
+      text-shadow: none;
+    }
+
+    .main-header__nav a {
+      color: vars.$text-sub;
+      text-shadow: none;
+
+      &::after {
+        background-color: vars.$stone-dark;
+      }
+
+      &:hover {
+        color: vars.$carbon;
+      }
+    }
+
+    .main-header__cart-btn {
+      color: vars.$carbon;
+    }
+
+    .main-header__toggle span {
+      background-color: vars.$carbon;
+    }
+  }
+
+  .container {
+    @include mix.container;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 68px;
+
+    @include mix.respond-to('tablet') {
+      height: 80px;
+    }
+  }
+
+  &__logo {
+    font-family: vars.$font-display;
+    font-size: 1.55rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    transition: vars.$transition-fast;
+
+    @include mix.respond-to('tablet') {
+      font-size: 1.9rem;
+    }
+
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+
+  &__nav {
+    display: none;
+
+    @include mix.respond-to('tablet') {
+      display: flex;
+      align-items: center;
+      gap: 2.25rem;
+    }
+
+    a {
+      font-size: 0.75rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      position: relative;
+      padding: 4px 0;
+      transition: vars.$transition-fast;
+
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 0%;
+        height: 1.5px;
+        transition: vars.$transition-fast;
+      }
+
+      &:hover {
+        &::after {
+          width: 100%;
+        }
+      }
+    }
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+  }
+
+  &__cart-btn {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    border-radius: 50%;
+    transition: vars.$transition-fast;
+
+    &:hover {
+      transform: scale(1.08);
+    }
+
+    .badge {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      background-color: vars.$accent-coral;
+      color: vars.$warm-white-pure;
+      font-size: 0.65rem;
+      font-weight: 600;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 6px rgba(223, 88, 64, 0.4);
+    }
+  }
+
+  &__toggle {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 6px;
+
+    @include mix.respond-to('tablet') {
+      display: none;
+    }
+
+    span {
+      display: block;
+      width: 22px;
+      height: 1.5px;
+      transition: vars.$transition-fast;
+    }
+  }
+
+  &__mobile-menu {
+    display: block;
+    background: rgba(14, 16, 13, 0.95);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+
+    @include mix.respond-to('tablet') {
+      display: none;
+    }
+
+    nav {
+      display: flex;
+      flex-direction: column;
+      padding: 1.5rem 1.5rem 2rem;
+
+      a {
+        padding: 0.9rem 0;
+        font-size: 0.95rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        color: vars.$warm-white;
+
+        &:last-child {
+          border-bottom: none;
+        }
+      }
+    }
+  }
+}

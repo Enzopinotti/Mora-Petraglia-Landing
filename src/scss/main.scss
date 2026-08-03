@@ -1,0 +1,12 @@
+// Main SCSS entrypoint — Landing Mora Petraglia
+@use "abstracts/variables" as vars;
+@use "abstracts/functions" as fn;
+@use "abstracts/mixins" as mix;
+
+@use "base/reset";
+@use "base/typography";
+
+@use "layout/header";
+@use "layout/footer";
+
+@use "components/all";
