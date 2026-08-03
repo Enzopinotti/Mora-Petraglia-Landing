@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 import AnnounceBar from './components/AnnounceBar';
 import Header from './components/Header';
