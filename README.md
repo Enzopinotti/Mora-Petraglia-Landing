@@ -1,56 +1,43 @@
-# Mora Petraglia — Landing & Portfolio Artístico
+# Mora Petraglia — Landing
 
-Landing web responsive, portfolio curatorial y catálogo e-commerce para **Mora Petraglia**, artista plástica y muralista de la ciudad de La Plata.
+Landing responsive para Mora Petraglia, artista plástica y muralista de La Plata.
 
-El sitio combina una estética de galería de arte contemporáneo con la calidez editorial, destacando la identidad argentina, la cultura popular y las figuras icónicas presentes en su obra.
+El sitio está migrado a una estructura limpia de Vite + React + TypeScript + Sass, con animaciones GSAP, hero con video y secciones reales para obra, prints, murales, sobre Mora, exhibiciones y contacto.
 
----
+## Desarrollo
 
-## 🚀 Tecnologías
-
-- **React 19** + **TypeScript**
-- **Vite 8**
-- **SCSS Modular** (usando `@use` y `sass:color`, arquitectura de referencia estilo WeChina)
-- **GSAP (GreenSock)** (Animaciones fluidas y microinteracciones)
-
----
-
-## 🎨 Estilo Visual & Diseño
-
-- **Tipografía**:
-  - *Títulos Editoriales*: **Cormorant Garamond** (Serif elegante, artística).
-  - *Interfaz y Cuerpo*: **DM Sans** (Sans-serif limpia y contemporánea).
-- **Paleta de Colores**: Tonos neutros (blanco cálido, beige, piedra, verde oliva, carbón) para dar protagonismo total al color de las pinturas.
-- **Mobile First**: Diseño y grillas completamente optimizadas para pantallas desde 390px hasta 1440px+.
-
----
-
-## 💻 Desarrollo Local
-
-1. Instalar dependencias:
 ```bash
 npm install
-```
-
-2. Iniciar servidor de desarrollo:
-```bash
 npm run dev
-```
-
-3. Construir para producción:
-```bash
 npm run build
 ```
 
----
+## Videos del hero
 
-## 📹 Agregar los Videos del Hero
+Los videos existentes se mantienen en:
 
-Para utilizar tus propios videos en el **Hero principal**:
+- `public/videos/hero-desktop.mp4`
+- `public/videos/hero-mobile.mp4`
+- `public/videos/hero-poster.jpg`
 
-1. Guardá los videos en la carpeta `public/videos/` con los siguientes nombres:
-   - `hero-desktop.mp4` (para pantallas de escritorio / tablet)
-   - `hero-mobile.mp4` (para teléfonos móviles)
-2. El reproductor actualizará la fuente automáticamente según el dispositivo del usuario. Si no hay videos cargados, se mostrará una imagen poster de respaldo.
-# Mora-Petraglia-Landing
-# Mora-Petraglia-Landing
+No hace falta moverlos. El hero ahora usa WebM primero y conserva esos MP4 como respaldo:
+
+- `public/videos/hero-desktop.webm`
+- `public/videos/hero-mobile.webm`
+- `public/videos/hero-poster.webp`
+
+El frame optimizado está en `public/videos/frames/hero-frame-01.webp`.
+
+## Carpetas para próximos assets
+
+- `src/assets/images/hero/`
+- `src/assets/images/works/`
+- `src/assets/images/prints/`
+- `src/assets/images/murals/`
+- `src/assets/images/exhibitions/`
+- `src/assets/images/textures/`
+- `public/videos/process/`
+- `public/videos/exhibitions/`
+- `public/videos/social/`
+
+La lista de material pendiente está en `ASSETS_PENDIENTES.md`.
