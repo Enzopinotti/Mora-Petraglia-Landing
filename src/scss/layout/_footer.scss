@@ -1,94 +1,122 @@
-@use "sass:color";
 @use "../abstracts/variables" as vars;
 @use "../abstracts/mixins" as mix;
 
 .main-footer {
-  background-color: vars.$dark-bg;
-  color: vars.$stone-light;
-  padding-top: 5rem;
-  padding-bottom: 2.5rem;
+  position: relative;
+  overflow: hidden;
+  background: vars.$deep-black;
+  color: rgba(255, 253, 248, 0.72);
+  padding: 3.25rem 0 1.8rem;
+  text-align: center;
 
-  .container {
-    @include mix.container;
+  @include mix.respond-to('tablet') {
+    padding: 4.5rem 0 2rem;
+    text-align: left;
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 8px;
+    background: linear-gradient(90deg, vars.$magenta, vars.$yellow, vars.$cyan, vars.$blue);
   }
 
   &__grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 2.5rem;
-    margin-bottom: 4rem;
+    gap: 1.8rem;
+    margin-bottom: 2.35rem;
 
     @include mix.respond-to('tablet') {
-      grid-template-columns: 2fr repeat(3, 1fr);
+      grid-template-columns: 1.5fr repeat(3, 1fr);
+      gap: 2.25rem;
+      margin-bottom: 3.25rem;
     }
   }
 
   &__brand {
     h3 {
-      font-family: vars.$font-display;
-      font-size: 1.75rem;
+      margin-bottom: 0.8rem;
+      color: vars.$chalk;
+      font-size: 2.2rem;
       font-style: italic;
-      color: vars.$warm-white;
-      margin-bottom: 0.75rem;
     }
 
     p {
-      font-size: 0.85rem;
-      line-height: 1.6;
-      margin-bottom: 1.5rem;
+      max-width: 310px;
+      margin-inline: auto;
+      color: rgba(255, 253, 248, 0.66);
+
+      @include mix.respond-to('tablet') {
+        margin-inline: 0;
+      }
     }
   }
 
   &__socials {
     display: flex;
-    gap: 1.25rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+
+    @include mix.respond-to('tablet') {
+      justify-content: flex-start;
+    }
 
     a {
-      font-size: 0.75rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: vars.$stone-light;
-      transition: vars.$transition-fast;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: vars.$radius;
+      padding: 0.55rem 0.7rem;
+      color: vars.$chalk;
+      font-size: 0.88rem;
+      font-weight: 800;
+      transition:
+        transform vars.$transition-fast,
+        background-color vars.$transition-fast;
 
       &:hover {
-        color: vars.$accent-gold;
+        background: rgba(255, 255, 255, 0.1);
+        transform: translateY(-2px);
       }
     }
   }
 
   &__column {
     h4 {
+      margin-bottom: 1rem;
+      color: vars.$yellow;
       font-family: vars.$font-body;
-      font-size: 0.7rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: vars.$stone-mid;
-      margin-bottom: 1.25rem;
+      font-size: 0.86rem;
+      font-weight: 900;
     }
 
-    ul {
-      li {
-        margin-bottom: 0.6rem;
+    li + li {
+      margin-top: 0.55rem;
+    }
 
-        a {
-          font-size: 0.825rem;
-          color: vars.$stone-light;
-          transition: vars.$transition-fast;
+    a, span {
+      color: rgba(255, 253, 248, 0.68);
+      font-size: 0.92rem;
+    }
 
-          &:hover {
-            color: vars.$warm-white;
-          }
-        }
+    a {
+      transition: color vars.$transition-fast;
+
+      &:hover {
+        color: vars.$chalk;
       }
     }
   }
 
   &__bottom {
-    padding-top: 2rem;
-    border-top: 1px solid vars.$dark-border;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    align-items: center;
+    gap: 0.7rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    padding-top: 1.5rem;
 
     @include mix.respond-to('tablet') {
       flex-direction: row;
@@ -96,8 +124,20 @@
       justify-content: space-between;
     }
 
-    p {
-      font-size: 0.75rem;
+    p,
+    a {
+      color: rgba(255, 253, 248, 0.5);
+      font-size: 0.84rem;
+    }
+
+    a {
+      text-decoration: underline;
+      text-underline-offset: 0.18em;
+      transition: color vars.$transition-fast;
+
+      &:hover {
+        color: vars.$chalk;
+      }
     }
   }
 }

@@ -1,4 +1,4 @@
-import React from 'react';
+import { SOCIAL_LINKS } from '../data/landing'
 
 export default function Footer() {
   return (
@@ -12,9 +12,8 @@ export default function Footer() {
               La Plata, Buenos Aires, Argentina.
             </p>
             <div className="main-footer__socials">
-              <a href="https://instagram.com" target="_blank" rel="noreferrer">Instagram</a>
-              <a href="https://pinterest.com" target="_blank" rel="noreferrer">Pinterest</a>
-              <a href="https://whatsapp.com" target="_blank" rel="noreferrer">WhatsApp</a>
+              <a href={SOCIAL_LINKS.instagram} target="_blank" rel="noreferrer">Instagram</a>
+              <a href="#contacto">Contacto</a>
             </div>
           </div>
 
@@ -33,7 +32,7 @@ export default function Footer() {
             <ul>
               <li><a href="#contacto">Encargos privados</a></li>
               <li><a href="#contacto">Proyectos urbanos</a></li>
-              <li><a href="#contacto">Envíos & Enbalaje</a></li>
+              <li><a href="#prints">Prints fine art</a></li>
               <li><a href="#contacto">Certificación</a></li>
             </ul>
           </div>
@@ -41,7 +40,7 @@ export default function Footer() {
           <div className="main-footer__column">
             <h4>Contacto</h4>
             <ul>
-              <li><a href="mailto:contacto@morapetraglia.com">contacto@morapetraglia.com</a></li>
+              <li><a href={SOCIAL_LINKS.mail}>contacto@morapetraglia.com</a></li>
               <li><span>La Plata, Argentina</span></li>
             </ul>
           </div>
@@ -49,9 +48,14 @@ export default function Footer() {
 
         <div className="main-footer__bottom">
           <p>© {new Date().getFullYear()} Mora Petraglia. Todos los derechos reservados.</p>
-          <p>Portfolio & Tienda Oficial de Arte</p>
+          <p>
+            Desarrollado por{' '}
+            <a href="https://enzopinotti.dev" target="_blank" rel="noreferrer">
+              Enzo Pinotti
+            </a>
+          </p>
         </div>
       </div>
     </footer>
-  );
+  )
 }
