@@ -1,29 +1,34 @@
-import React from 'react';
-
-const GALLERY_IMAGES = [
-  { src: 'https://images.unsplash.com/photo-1605721911519-3dfeb3be25e7?w=600&h=750&fit=crop&auto=format', alt: 'Obra 1', tall: true },
-  { src: 'https://images.unsplash.com/photo-1618331833071-ce81bd50d300?w=600&h=400&fit=crop&auto=format', alt: 'Obra 2', tall: false },
-  { src: 'https://images.unsplash.com/photo-1533208087231-c3618eab623c?w=600&h=400&fit=crop&auto=format', alt: 'Obra 3', tall: false },
-  { src: 'https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=600&h=750&fit=crop&auto=format', alt: 'Obra 4', tall: true },
-  { src: 'https://images.unsplash.com/photo-1531913764164-f85c52e6e654?w=600&h=400&fit=crop&auto=format', alt: 'Obra 5', tall: false },
-];
+import { MURALS } from '../data/landing'
 
 export default function GalleryMosaic() {
   return (
-    <section className="gallery-mosaic">
+    <section id="murales" className="gallery-mosaic" aria-labelledby="murales-title">
       <div className="container">
-        <div style={{ marginBottom: '2.5rem' }}>
-          <span className="eyebrow">Visuales & Texturas</span>
-          <h2 className="section-title">Galería de archivo</h2>
+        <div className="section-heading gallery-mosaic__heading" data-reveal>
+          <div>
+            <p className="section-kicker">Murales</p>
+            <h2 id="murales-title" className="section-title">
+              Galería de murales.
+            </h2>
+          </div>
+          <p>
+            Paredes, procesos y escenas de gran escala. Pasá el cursor por cada imagen para ver el detalle.
+          </p>
         </div>
+
         <div className="gallery-mosaic__grid">
-          {GALLERY_IMAGES.map((img, idx) => (
-            <div key={idx} className={`item ${img.tall ? 'item--tall' : ''}`}>
-              <img src={img.src} alt={img.alt} loading="lazy" />
-            </div>
+          {MURALS.map((mural) => (
+            <article key={mural.title} className={`gallery-item${mural.span ? ` gallery-item--${mural.span}` : ''}`} data-reveal>
+              <img src={mural.image} alt={mural.title} loading="lazy" data-parallax="-6" />
+              <div className="gallery-item__caption">
+                <p>{mural.type} · {mural.location}</p>
+                <h3>{mural.title}</h3>
+                <span>{mural.note}</span>
+              </div>
+            </article>
           ))}
         </div>
       </div>
     </section>
-  );
+  )
 }

@@ -2,6 +2,9 @@
 
 *, *::before, *::after {
   box-sizing: border-box;
+}
+
+* {
   margin: 0;
   padding: 0;
 }
@@ -9,22 +12,31 @@
 html {
   font-size: 16px;
   scroll-behavior: smooth;
+  scroll-padding-top: 76px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  @media (min-width: 768px) {
+    scroll-padding-top: 112px;
+  }
 }
 
 body {
+  min-width: 320px;
+  background: vars.$paper;
+  color: vars.$ink;
   font-family: vars.$font-body;
-  background-color: vars.$warm-white;
-  color: vars.$carbon;
-  line-height: 1.6;
+  line-height: 1.55;
   overflow-x: hidden;
 }
 
+body.menu-open {
+  overflow: hidden;
+}
+
 img, video {
-  max-width: 100%;
-  height: auto;
   display: block;
+  max-width: 100%;
 }
 
 a {
@@ -33,11 +45,10 @@ a {
 }
 
 button, input, textarea, select {
-  font: inherit;
-  color: inherit;
+  border: 0;
   background: none;
-  border: none;
-  outline: none;
+  color: inherit;
+  font: inherit;
 }
 
 button {
@@ -46,4 +57,9 @@ button {
 
 ul, ol {
   list-style: none;
+}
+
+::selection {
+  background: vars.$yellow;
+  color: vars.$ink;
 }

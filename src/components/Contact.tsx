@@ -1,55 +1,96 @@
-import React, { useState } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react'
+
+type QuoteRequestDetail = {
+  type?: string
+  message?: string
+}
 
 export default function Contact() {
-  const [formState, setFormState] = useState({ name: '', email: '', type: 'compra', message: '' });
-  const [sent, setSent] = useState(false);
+  const messageRef = useRef<HTMLTextAreaElement>(null)
+  const [formState, setFormState] = useState({ name: '', email: '', phone: '', type: 'obra', message: '' })
+  const [sent, setSent] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSent(true);
-  };
+  useEffect(() => {
+    const handleQuoteRequest = (event: Event) => {
+      const detail = (event as CustomEvent<QuoteRequestDetail>).detail
+
+      setSent(false)
+      setFormState((current) => ({
+        ...current,
+        type: detail?.type || 'obra',
+        message: detail?.message || current.message,
+      }))
+
+      window.setTimeout(() => messageRef.current?.focus(), 350)
+    }
+
+    window.addEventListener('mora:quote-request', handleQuoteRequest)
+    return () => window.removeEventListener('mora:quote-request', handleQuoteRequest)
+  }, [])
+
+  const handleSubmit = (event: FormEvent) => {
+    event.preventDefault()
+    setSent(true)
+  }
 
   return (
-    <section id="contacto" style={{ padding: '6rem 0', backgroundColor: '#ece6da' }}>
-      <div className="container" style={{ maxWidth: '800px', margin: '0 auto', padding: '0 20px' }}>
-        <span className="eyebrow" style={{ textAlign: 'center', display: 'block' }}>Contacto & Encargos</span>
-        <h2 className="section-title" style={{ textAlign: 'center', marginBottom: '2.5rem' }}>Escribile a Mora</h2>
+    <section id="contacto" className="contact" aria-labelledby="contacto-title">
+      <div className="container contact__grid">
+        <div className="contact__copy" data-reveal>
+          <p className="section-kicker">Contacto</p>
+          <h2 id="contacto-title" className="section-title">
+            Encargos, obra disponible y proyectos.
+          </h2>
+          <p>
+            Dejá una consulta para prints, obra original, murales privados o propuestas de exhibición. Para presupuestos, sumá teléfono, medidas, ubicación y una descripción breve.
+          </p>
+        </div>
 
         {sent ? (
-          <div style={{ textAlign: 'center', padding: '3rem', backgroundColor: '#f8f6f0', border: '1px solid #ded6c6' }}>
-            <h3 className="font-display" style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>¡Mensaje enviado!</h3>
-            <p style={{ color: '#4a453f' }}>Gracias por comunicarte. Mora responderá a tu correo a la brevedad.</p>
+          <div className="contact__sent" data-reveal>
+            <h3>Mensaje preparado</h3>
+            <p>Gracias por comunicarte. Mora responderá a tu correo a la brevedad.</p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', backgroundColor: '#f8f6f0', padding: '2.5rem', border: '1px solid #ded6c6' }}>
+          <form className="contact__form" onSubmit={handleSubmit} data-reveal>
             <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>Nombre completo</label>
+              <label htmlFor="contact-name">Nombre completo</label>
               <input
+                id="contact-name"
                 type="text"
                 required
-                style={{ width: '100%', padding: '0.75rem', border: '1px solid #ded6c6', outline: 'none' }}
                 value={formState.name}
                 onChange={(e) => setFormState({ ...formState, name: e.target.value })}
               />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>Email</label>
+              <label htmlFor="contact-email">Email</label>
               <input
+                id="contact-email"
                 type="email"
                 required
-                style={{ width: '100%', padding: '0.75rem', border: '1px solid #ded6c6', outline: 'none' }}
                 value={formState.email}
                 onChange={(e) => setFormState({ ...formState, email: e.target.value })}
               />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>Tipo de consulta</label>
+              <label htmlFor="contact-phone">Teléfono para enviar el presupuesto</label>
+              <input
+                id="contact-phone"
+                type="tel"
+                required
+                value={formState.phone}
+                onChange={(e) => setFormState({ ...formState, phone: e.target.value })}
+              />
+            </div>
+            <div>
+              <label htmlFor="contact-type">Tipo de consulta</label>
               <select
-                style={{ width: '100%', padding: '0.75rem', border: '1px solid #ded6c6', outline: 'none', backgroundColor: '#fff' }}
+                id="contact-type"
                 value={formState.type}
                 onChange={(e) => setFormState({ ...formState, type: e.target.value })}
               >
-                <option value="compra">Compra de obra original</option>
+                <option value="obra">Obra original</option>
                 <option value="print">Prints Fine Art</option>
                 <option value="mural">Proyecto o Encargo de Mural</option>
                 <option value="exposicion">Muestras y Prensa</option>
@@ -57,21 +98,22 @@ export default function Contact() {
               </select>
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>Mensaje</label>
+              <label htmlFor="contact-message">Medidas, ubicación y descripción</label>
               <textarea
+                id="contact-message"
+                ref={messageRef}
                 rows={5}
                 required
-                style={{ width: '100%', padding: '0.75rem', border: '1px solid #ded6c6', outline: 'none', resize: 'vertical' }}
                 value={formState.message}
                 onChange={(e) => setFormState({ ...formState, message: e.target.value })}
               />
             </div>
-            <button type="submit" className="btn btn-primary" style={{ marginTop: '1rem' }}>
-              Enviar mensaje →
+            <button type="submit" className="btn btn-primary">
+              Enviar mensaje
             </button>
           </form>
         )}
       </div>
     </section>
-  );
+  )
 }

@@ -1,97 +1,99 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react'
 
-interface HeaderProps {
-  cartCount: number;
-}
+import { SOCIAL_LINKS } from '../data/landing'
 
 const NAV_ITEMS = [
   { label: 'Inicio', href: '#hero' },
-  { label: 'Obra', href: '#obra' },
   { label: 'Prints', href: '#prints' },
+  { label: 'Obra', href: '#obra' },
   { label: 'Murales', href: '#murales' },
   { label: 'Sobre Mora', href: '#sobre-mora' },
   { label: 'Exhibiciones', href: '#exhibiciones' },
   { label: 'Contacto', href: '#contacto' },
-];
+]
 
-export default function Header({ cartCount }: HeaderProps) {
-  const [isOverHero, setIsOverHero] = useState(true);
-  const [menuOpen, setMenuOpen] = useState(false);
+export default function Header() {
+  const [isOverHero, setIsOverHero] = useState(true)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
     const handleScroll = () => {
-      // Check if scroll is within hero height (approx 800px)
-      const heroHeight = document.getElementById('hero')?.offsetHeight || 700;
-      setIsOverHero(window.scrollY < heroHeight - 80);
-    };
+      const hero = document.getElementById('hero')
+      const heroBottom = (hero?.offsetTop || 0) + (hero?.offsetHeight || 720)
+      setIsOverHero(window.scrollY < heroBottom - 90)
+    }
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll(); // Initial check
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    window.addEventListener('resize', handleScroll)
+    handleScroll()
 
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('resize', handleScroll)
+    }
+  }, [])
+
+  useEffect(() => {
+    document.body.classList.toggle('menu-open', menuOpen)
+    return () => document.body.classList.remove('menu-open')
+  }, [menuOpen])
+
+  const closeMenu = () => setMenuOpen(false)
 
   return (
     <header
-      className={`main-header ${
-        isOverHero ? 'main-header--transparent' : 'main-header--scrolled'
+      className={`main-header ${isOverHero ? 'main-header--over-hero' : 'main-header--scrolled'} ${
+        menuOpen ? 'main-header--open' : ''
       }`}
     >
-      <div className="container">
-        {/* Toggle mobile menu */}
-        <button
-          className="main-header__toggle"
-          onClick={() => setMenuOpen(!menuOpen)}
-          aria-label="Abrir menú"
-        >
-          <span style={{ transform: menuOpen ? 'rotate(45deg) translate(4px, 5px)' : 'none' }} />
-          <span style={{ opacity: menuOpen ? 0 : 1 }} />
-          <span style={{ transform: menuOpen ? 'rotate(-45deg) translate(4px, -5px)' : 'none' }} />
-        </button>
-
-        {/* Logo */}
-        <a href="#hero" className="main-header__logo">
-          Mora Petraglia
-        </a>
-
-        {/* Desktop Nav */}
-        <nav className="main-header__nav">
-          {NAV_ITEMS.map((item) => (
-            <a key={item.label} href={item.href}>
-              {item.label}
-            </a>
-          ))}
-        </nav>
-
-        {/* Cart Action */}
-        <div className="main-header__actions">
-          <button className="main-header__cart-btn" aria-label="Carrito">
-            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-              <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <path d="M16 10a4 4 0 0 1-8 0" />
-            </svg>
-            {cartCount > 0 && <span className="badge">{cartCount}</span>}
-          </button>
-        </div>
+      <div className="main-header__announcement">
+        Prints de edición limitada disponibles · Envíos a Argentina y exterior
       </div>
 
-      {/* Mobile Drawer */}
-      {menuOpen && (
-        <div className="main-header__mobile-menu">
-          <nav>
+      <div className="main-header__bar">
+        <div className="container main-header__inner">
+          <a href="#hero" className="main-header__logo" onClick={closeMenu}>
+            Mora Petraglia
+          </a>
+
+          <nav className="main-header__nav" aria-label="Navegación principal">
             {NAV_ITEMS.map((item) => (
-              <a
-                key={item.label}
-                href={item.href}
-                onClick={() => setMenuOpen(false)}
-              >
+              <a key={item.label} href={item.href}>
                 {item.label}
               </a>
             ))}
           </nav>
+
+          <div className="main-header__actions">
+            <a className="main-header__social" href={SOCIAL_LINKS.instagram} target="_blank" rel="noreferrer">
+              Instagram
+            </a>
+            <button
+              className="main-header__toggle"
+              onClick={() => setMenuOpen((value) => !value)}
+              aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
+              aria-expanded={menuOpen}
+            >
+              <span />
+              <span />
+              <span />
+            </button>
+          </div>
         </div>
-      )}
+      </div>
+
+      <div className="main-header__mobile-menu" aria-hidden={!menuOpen}>
+        <nav aria-label="Navegación móvil">
+          {NAV_ITEMS.map((item) => (
+            <a key={item.label} href={item.href} onClick={closeMenu}>
+              {item.label}
+            </a>
+          ))}
+          <a href={SOCIAL_LINKS.instagram} target="_blank" rel="noreferrer" onClick={closeMenu}>
+            Instagram
+          </a>
+        </nav>
+      </div>
     </header>
-  );
+  )
 }

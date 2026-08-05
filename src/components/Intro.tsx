@@ -1,42 +1,34 @@
-import React, { useRef } from 'react';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { useGSAP } from '@gsap/react';
-
-gsap.registerPlugin(ScrollTrigger);
+const MARQUEE_WORDS = ['retratos pop', 'murales', 'La Plata', 'memoria popular', 'prints fine art', 'color argentino']
+const MARQUEE_TRACK = Array.from({ length: 10 }, () => MARQUEE_WORDS).flat()
 
 export default function Intro() {
-  const sectionRef = useRef<HTMLElement>(null);
-
-  useGSAP(
-    () => {
-      gsap.from('.intro__glass-quote', {
-        y: 40,
-        opacity: 0,
-        scale: 0.97,
-        duration: 1,
-        ease: 'power3.out',
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: 'top 75%',
-        },
-      });
-    },
-    { scope: sectionRef }
-  );
-
   return (
-    <section className="intro" ref={sectionRef}>
-      <div className="container">
-        <div className="intro__glass-quote">
-          <p className="intro__text">
-            "La pintura como forma de memoria, identidad y presencia. Mora Petraglia construye imágenes intensas donde el color, la cultura popular y las figuras argentinas adquieren una nueva dimensión."
+    <section className="intro" aria-labelledby="intro-title">
+      <div className="container intro__grid">
+        <div data-reveal>
+          <p className="section-kicker">Mora Petraglia</p>
+          <h2 id="intro-title" className="section-title">
+            La calle, los íconos y el gesto pop.
+          </h2>
+        </div>
+
+        <div className="intro__body" data-reveal>
+          <p>
+            Desde su archivo de Instagram aparece una Mora en movimiento: retratos de personajes argentinos, murales con frases de barrio, fotos de proceso, escenas de muestra y una paleta que mezcla rosa, azul, rojo y turquesa sin pedir permiso.
           </p>
-          <a href="#sobre-mora" className="intro__link">
-            Conocer a Mora →
-          </a>
+          <p>
+            Este recorrido toma esa energía como punto de partida: ritmo, movimiento, obra real y una galería concentrada en el vínculo entre pintura, pared y cultura popular.
+          </p>
+        </div>
+      </div>
+
+      <div className="intro__marquee" aria-hidden="true">
+        <div className="intro__marquee-track">
+          {MARQUEE_TRACK.map((word, index) => (
+            <span key={`${word}-${index}`}>{word}</span>
+          ))}
         </div>
       </div>
     </section>
-  );
+  )
 }
