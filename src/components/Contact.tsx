@@ -7,7 +7,7 @@ type QuoteRequestDetail = {
 }
 
 export default function Contact() {
-  const { getContent } = useCms()
+  const { getContent, getSetting } = useCms()
   const messageRef = useRef<HTMLTextAreaElement>(null)
   const [formState, setFormState] = useState({ name: '', email: '', phone: '', type: 'obra', message: '' })
   const [sent, setSent] = useState(false)
@@ -39,6 +39,23 @@ export default function Contact() {
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
+
+    const whatsapp = getSetting('whatsapp')
+    const email = getSetting('email', 'contacto@morapetraglia.com')
+
+    const subject = `Consulta web Mora Petraglia - ${formState.name}`
+    const bodyText = `Hola Mora,\n\nMi nombre es: ${formState.name}\nEmail: ${formState.email}\nTeléfono: ${formState.phone}\nTipo de consulta: ${formState.type}\n\nDetalles:\n${formState.message}`
+
+    if (whatsapp) {
+      // Limpiamos caracteres no numéricos excepto el código de país
+      const cleanPhone = String(whatsapp).replace(/[^0-9]/g, '')
+      const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(bodyText)}`
+      window.open(waUrl, '_blank')
+    } else {
+      const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`
+      window.location.href = mailtoUrl
+    }
+
     setSent(true)
   }
 
@@ -56,7 +73,7 @@ export default function Contact() {
         {sent ? (
           <div className="contact__sent" data-reveal>
             <h3>Mensaje preparado</h3>
-            <p>Gracias por comunicarte. Mora responderá a tu correo a la brevedad.</p>
+            <p>Se ha preparado la comunicación. Si el canal no se abrió automáticamente, podés reintentar o escribir directamente a los enlaces del pie de página.</p>
           </div>
         ) : (
           <form className="contact__form" onSubmit={handleSubmit} data-reveal>
@@ -81,7 +98,7 @@ export default function Contact() {
               />
             </div>
             <div>
-              <label htmlFor="contact-phone">Teléfono para enviar el presupuesto</label>
+              <label htmlFor="contact-phone">Teléfono para presupuesto</label>
               <input
                 id="contact-phone"
                 type="tel"
@@ -116,7 +133,7 @@ export default function Contact() {
               />
             </div>
             <button type="submit" className="btn btn-primary">
-              Enviar mensaje
+              Enviar consulta
             </button>
           </form>
         )}

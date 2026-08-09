@@ -13,7 +13,8 @@ import Header from './components/Header'
 import Hero from './components/Hero'
 import Intro from './components/Intro'
 import Prints from './components/Prints'
-import { CmsProvider } from './context/CmsContext'
+import SiteMeta from './components/SiteMeta'
+import { CmsProvider, useCms } from './context/CmsContext'
 
 gsap.registerPlugin(useGSAP, ScrollTrigger)
 
@@ -111,6 +112,7 @@ function LandingContent() {
 
   return (
     <div className="site-shell" ref={appRef}>
+      <SiteMeta />
       <Header />
       <Hero />
       <main>
@@ -126,6 +128,40 @@ function LandingContent() {
   )
 }
 
+function PublicLandingGate() {
+  const { loading } = useCms()
+
+  if (loading) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '100vh',
+          background: '#12100f',
+          color: '#f5ede0',
+          fontFamily: 'Cormorant Garamond, serif',
+          gap: '1.5rem',
+        }}
+      >
+        <h1 style={{ fontWeight: 300, fontSize: '2.5rem', letterSpacing: '0.1em', animation: 'pulse-loader 2s infinite ease-in-out' }}>
+          Mora Petraglia
+        </h1>
+        <style>{`
+          @keyframes pulse-loader {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 1; }
+          }
+        `}</style>
+      </div>
+    )
+  }
+
+  return <LandingContent />
+}
+
 export default function App() {
   const [isAdmin, setIsAdmin] = useState<boolean>(() => window.location.pathname.startsWith('/admin'))
 
@@ -139,7 +175,7 @@ export default function App() {
 
   return (
     <CmsProvider>
-      {isAdmin ? <AdminApp /> : <LandingContent />}
+      {isAdmin ? <AdminApp /> : <PublicLandingGate />}
     </CmsProvider>
   )
 }

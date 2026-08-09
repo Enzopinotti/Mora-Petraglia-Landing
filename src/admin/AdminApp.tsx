@@ -39,10 +39,18 @@ export default function AdminApp() {
   const handleLoginSuccess = async () => {
     setLoggingIn(true)
     try {
-      await refetch()
-      setAuthenticated(true)
-      triggerToast('¡Bienvenida al panel de administración!', 'success')
+      const success = await refetch()
+      if (success) {
+        setAuthenticated(true)
+        triggerToast('¡Bienvenida al panel de administración!', 'success')
+      } else {
+        cmsAuth.logout()
+        setAuthenticated(false)
+        triggerToast('No se pudieron validar los permisos de administración.', 'error')
+      }
     } catch {
+      cmsAuth.logout()
+      setAuthenticated(false)
       triggerToast('Error al cargar datos administrativos.', 'error')
     } finally {
       setLoggingIn(false)

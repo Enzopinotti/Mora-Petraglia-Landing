@@ -11,6 +11,10 @@ export default function Exhibitions() {
     'Registros de obra en exhibición, encuentros culturales y momentos donde la pintura sale a dialogar con público.',
   )
 
+  const hideBrokenImage = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    e.currentTarget.style.display = 'none'
+  }
+
   return (
     <section id="exhibiciones" className="exhibitions" aria-labelledby="exhibiciones-title">
       <div className="container">
@@ -24,26 +28,36 @@ export default function Exhibitions() {
           <p>{subtitle}</p>
         </div>
 
-        <div className="exhibitions__grid">
-          {events.map((item) => {
-            const imgSrc = getCoverImage(item.media, item.image)
-            const typeLabel = LABELS.subtypeEvent[item.subtype as keyof typeof LABELS.subtypeEvent] || 'Exhibición'
-            const dateLabel = item.date_label || (item.year ? `${typeLabel} · ${item.year}` : typeLabel)
+        {events.length > 0 && (
+          <div className="exhibitions__grid">
+            {events.map((item) => {
+              const imgSrc = getCoverImage(item.media, item.image)
+              const typeLabel = LABELS.subtypeEvent[item.subtype as keyof typeof LABELS.subtypeEvent] || 'Exhibición'
+              const dateLabel = item.date_label || (item.year ? `${typeLabel} · ${item.year}` : typeLabel)
 
-            return (
-              <article className="exhibition-card" key={item.id || item.title} data-reveal>
-                <div className="exhibition-card__image">
-                  {imgSrc && <img src={imgSrc} alt={item.title} loading="lazy" style={{ objectPosition: 'center center' }} />}
-                </div>
-                <div className="exhibition-card__copy">
-                  <p>{dateLabel}</p>
-                  <h3>{item.title}</h3>
-                  <span>{item.short_description || item.description}</span>
-                </div>
-              </article>
-            )
-          })}
-        </div>
+              return (
+                <article className="exhibition-card" key={item.id || item.title} data-reveal>
+                  <div className="exhibition-card__image">
+                    {imgSrc && (
+                      <img
+                        src={imgSrc}
+                        alt={item.title}
+                        loading="lazy"
+                        style={{ objectPosition: 'center center' }}
+                        onError={hideBrokenImage}
+                      />
+                    )}
+                  </div>
+                  <div className="exhibition-card__copy">
+                    <p>{dateLabel}</p>
+                    <h3>{item.title}</h3>
+                    <span>{item.short_description || item.description}</span>
+                  </div>
+                </article>
+              )
+            })}
+          </div>
+        )}
       </div>
     </section>
   )

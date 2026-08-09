@@ -4,7 +4,7 @@ import { LABELS } from '../../cms/helpers'
 import type { MediaItem, MediaRole } from '../../cms/types'
 
 interface MediaUploaderProps {
-  entityType: 'products' | 'projects' | 'events'
+  entityType: 'products' | 'projects' | 'events' | 'site'
   entityId?: string
   media: MediaItem[]
   onChange: (updatedMedia: MediaItem[]) => void
@@ -13,6 +13,7 @@ interface MediaUploaderProps {
 
 export default function MediaUploader({ entityType, entityId, media = [], onChange, onToast }: MediaUploaderProps) {
   const [uploading, setUploading] = useState(false)
+  const [lastArchived, setLastArchived] = useState<{ item: MediaItem; index: number } | null>(null)
 
   if (!entityId) {
     return (
@@ -63,12 +64,13 @@ export default function MediaUploader({ entityType, entityId, media = [], onChan
         altText,
       })
 
-      if (response.success && response.data?.url) {
+      if (response.success && response.data?.id) {
         const newItem: MediaItem = {
-          url: response.data.url,
-          id: response.data.id || `img-${Date.now()}`,
+          id: response.data.id,
+          url: `/api/media?id=${response.data.id}`,
           role: role as MediaRole,
           alt: altText,
+          sort_order: media.length * 10 + 10,
         }
         onChange([...media, newItem])
         onToast?.('Imagen subida correctamente', 'success')
@@ -98,6 +100,7 @@ export default function MediaUploader({ entityType, entityId, media = [], onChan
       }
     }
 
+    // Portada única lógica: desactivar covers previos localmente si se selecciona 'cover'
     const updated = media.map((m, i) => {
       if (role === 'cover') {
         return { ...m, role: i === index ? ('cover' as MediaRole) : ('gallery' as MediaRole) }
@@ -113,8 +116,6 @@ export default function MediaUploader({ entityType, entityId, media = [], onChan
     if (!item) return
 
     const normalizedAlt = rawAlt.trim()
-
-    // No enviar request si el valor no cambió
     if (item.alt === normalizedAlt) return
 
     if (item.id && !item.id.startsWith('fallback')) {
@@ -130,13 +131,12 @@ export default function MediaUploader({ entityType, entityId, media = [], onChan
       }
     }
 
-    // Solo modificar estado local después de éxito
     const updated = media.map((m, i) => (i === index ? { ...m, alt: normalizedAlt } : m))
     onChange(updated)
     onToast?.('Texto alternativo guardado', 'success')
   }
 
-  const archiveMedia = async (index: number) => {
+  const archiveMediaItem = async (index: number) => {
     const item = media[index]
     if (!item) return
 
@@ -157,9 +157,61 @@ export default function MediaUploader({ entityType, entityId, media = [], onChan
       }
     }
 
+    setLastArchived({ item, index })
     const updated = media.filter((_, i) => i !== index)
     onChange(updated)
     onToast?.('Imagen quitada correctamente', 'success')
+  }
+
+  const restoreArchived = async () => {
+    if (!lastArchived) return
+    const { item, index } = lastArchived
+
+    if (item.id && !item.id.startsWith('fallback')) {
+      try {
+        const response = await cmsApi.restoreMedia(item.id)
+        if (!response.success) {
+          onToast?.(response.error || 'No se pudo restaurar la imagen', 'error')
+          return
+        }
+      } catch {
+        onToast?.('Error al restaurar la imagen', 'error')
+        return
+      }
+    }
+
+    const updated = [...media]
+    updated.splice(index, 0, item)
+    onChange(updated)
+    setLastArchived(null)
+    onToast?.('Imagen restaurada correctamente', 'success')
+  }
+
+  const moveItem = async (index: number, direction: 'up' | 'down') => {
+    const newIndex = direction === 'up' ? index - 1 : index + 1
+    if (newIndex < 0 || newIndex >= media.length) return
+
+    const updated = [...media]
+    const [movedItem] = updated.splice(index, 1)
+    updated.splice(newIndex, 0, movedItem)
+
+    // Recalcular sort_orders (10, 20, 30...)
+    const reordered = updated.map((m, idx) => ({
+      ...m,
+      sort_order: (idx + 1) * 10,
+    }))
+
+    // Persistir orden del elemento movido en el backend
+    const moved = reordered[newIndex]
+    if (moved.id && !moved.id.startsWith('fallback') && moved.sort_order !== undefined) {
+      try {
+        await cmsApi.updateMediaOrder(moved.id, moved.sort_order)
+      } catch {
+        // Toleramos fallos de red silenciosos en ordenamiento secuencial
+      }
+    }
+
+    onChange(reordered)
   }
 
   return (
@@ -172,13 +224,32 @@ export default function MediaUploader({ entityType, entityId, media = [], onChan
         <span style={{ fontSize: '0.8rem', color: '#746b64' }}>Formatos: JPG, PNG, WEBP (Max 8MB)</span>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '1rem', marginTop: '0.5rem' }}>
+      {lastArchived && (
+        <div style={{ background: '#fcf8e3', border: '1px solid #faebcc', padding: '0.75rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: '0.85rem', color: '#8a6d3b' }}>Imagen quitada de la lista.</span>
+          <button type="button" onClick={restoreArchived} className="btn-secondary-admin" style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}>
+            Deshacer
+          </button>
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '1rem', marginTop: '0.5rem' }}>
         {media.map((item, index) => (
           <div key={item.id || index} style={{ border: '1px solid #ded5cc', background: '#ffffff', padding: '0.5rem', borderRadius: 0, position: 'relative' }}>
-            {item.url
-              ? <img src={item.url} alt={item.alt || ''} style={{ width: '100%', height: '110px', objectFit: 'cover' }} />
-              : <div style={{ width: '100%', height: '110px', background: '#f0ebe4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#b0a599', fontSize: '1.4rem' }}>🖼</div>
-            }
+            {item.url ? (
+              <img
+                src={item.url}
+                alt={item.alt || ''}
+                style={{ width: '100%', height: '110px', objectFit: 'cover' }}
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none'
+                }}
+              />
+            ) : (
+              <div style={{ width: '100%', height: '110px', background: '#f0ebe4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#b0a599', fontSize: '1.4rem' }}>
+                🖼
+              </div>
+            )}
 
             <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
               <select
@@ -201,13 +272,33 @@ export default function MediaUploader({ entityType, entityId, media = [], onChan
                 style={{ fontSize: '0.75rem', padding: '0.25rem', border: '1px solid #ded5cc' }}
               />
 
-              <button
-                type="button"
-                onClick={() => archiveMedia(index)}
-                style={{ fontSize: '0.75rem', color: '#d32f2f', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', marginTop: '0.25rem' }}
-              >
-                Quitar imagen
-              </button>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.25rem' }}>
+                <button
+                  type="button"
+                  onClick={() => archiveMediaItem(index)}
+                  style={{ fontSize: '0.75rem', color: '#d32f2f', background: 'none', border: 'none', cursor: 'pointer' }}
+                >
+                  Quitar
+                </button>
+                <div style={{ display: 'flex', gap: '0.25rem' }}>
+                  <button
+                    type="button"
+                    disabled={index === 0}
+                    onClick={() => moveItem(index, 'up')}
+                    style={{ fontSize: '0.75rem', padding: '0.1rem 0.3rem', border: '1px solid #ded5cc', background: '#fff', cursor: index === 0 ? 'not-allowed' : 'pointer' }}
+                  >
+                    ←
+                  </button>
+                  <button
+                    type="button"
+                    disabled={index === media.length - 1}
+                    onClick={() => moveItem(index, 'down')}
+                    style={{ fontSize: '0.75rem', padding: '0.1rem 0.3rem', border: '1px solid #ded5cc', background: '#fff', cursor: index === media.length - 1 ? 'not-allowed' : 'pointer' }}
+                  >
+                    →
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         ))}

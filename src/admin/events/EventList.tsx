@@ -29,6 +29,7 @@ export default function EventList({ onToast }: { onToast: (msg: string, type?: '
       subtype: 'exhibition',
       status: 'draft',
       media: [],
+      featured: false,
     })
     setIsModalOpen(true)
   }
@@ -38,8 +39,17 @@ export default function EventList({ onToast }: { onToast: (msg: string, type?: '
     if (!editing?.title) return
     const isNew = !editing.id
     setSaving(true)
+
+    const cleanEvent = {
+      ...editing,
+      year: editing.year !== '' && editing.year !== undefined ? String(editing.year) : '',
+    }
+    // Removemos date_label y short_description del payload, el backend los calcula o mapea
+    delete cleanEvent.date_label
+    delete cleanEvent.short_description
+
     try {
-      const response = await cmsApi.saveEvent(editing)
+      const response = await cmsApi.saveEvent(cleanEvent)
       if (response.success) {
         if (isNew && response.data?.id) {
           setEditing(response.data)
@@ -160,6 +170,12 @@ export default function EventList({ onToast }: { onToast: (msg: string, type?: '
                           Ocultar
                         </button>
                       )}
+                      {ev.status !== 'draft' && (
+                        <button style={{ display: 'block', width: '100%', padding: '0.6rem 1rem', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.85rem' }}
+                          onClick={() => executeAction(ev.id, cmsApi.restoreEvent.bind(cmsApi), 'Exhibición devuelta a Borrador')}>
+                          Volver a borrador
+                        </button>
+                      )}
                       {ev.status === 'archived' ? (
                         <button style={{ display: 'block', width: '100%', padding: '0.6rem 1rem', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.85rem' }}
                           onClick={() => executeAction(ev.id, cmsApi.restoreEvent.bind(cmsApi), 'Exhibición restaurada como borrador')}>
@@ -185,63 +201,152 @@ export default function EventList({ onToast }: { onToast: (msg: string, type?: '
 
       {isModalOpen && editing && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div style={{ background: '#fff', border: '1px solid #ded5cc', maxWidth: '700px', width: '100%', maxHeight: '90vh', overflowY: 'auto', padding: '2rem' }}>
-            <h3 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '1.8rem', margin: '0 0 1.5rem 0' }}>
-              {editing.id ? 'Editar Exhibición' : 'Nueva Exhibición'}
+          <div style={{ background: '#fff', border: '1px solid #ded5cc', maxWidth: '750px', width: '100%', maxHeight: '90vh', overflowY: 'auto', padding: '2.5rem' }}>
+            <h3 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '2rem', margin: '0 0 1.5rem 0', borderBottom: '1px solid #ded5cc', paddingBottom: '0.5rem' }}>
+              {editing.id ? 'Editar Exhibición / Evento' : 'Nueva Exhibición / Evento'}
             </h3>
 
-            <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>Título</label>
-                  <input
-                    type="text"
-                    required
-                    value={editing.title || ''}
-                    onChange={(e) => setEditing({ ...editing, title: e.target.value })}
-                    style={{ width: '100%', padding: '0.6rem', border: '1px solid #ded5cc' }}
-                  />
+            <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              
+              {/* Grupo 1: Información Principal */}
+              <div>
+                <h4 style={{ margin: '0 0 0.8rem 0', fontSize: '0.95rem', color: '#746b64', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Información Básica</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Título / Nombre de Exhibición</label>
+                    <input type="text" required value={editing.title || ''} onChange={(e) => setEditing({ ...editing, title: e.target.value })}
+                      style={{ width: '100%', padding: '0.5rem', border: '1px solid #ded5cc' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Tipo de Evento</label>
+                    <select value={editing.subtype || 'exhibition'} onChange={(e) => setEditing({ ...editing, subtype: e.target.value as SubtypeEvent })}
+                      style={{ width: '100%', padding: '0.55rem', border: '1px solid #ded5cc' }}>
+                      <option value="exhibition">Exhibición</option>
+                      <option value="award">Premio</option>
+                      <option value="competition">Salón / certamen</option>
+                      <option value="talk">Charla</option>
+                      <option value="launch">Inauguración</option>
+                      <option value="other">Otro</option>
+                    </select>
+                  </div>
                 </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>Tipo</label>
-                  <select
-                    value={editing.subtype || 'exhibition'}
-                    onChange={(e) => setEditing({ ...editing, subtype: e.target.value as SubtypeEvent })}
-                    style={{ width: '100%', padding: '0.6rem', border: '1px solid #ded5cc' }}
-                  >
-                    <option value="exhibition">Exhibición</option>
-                    <option value="award">Premio</option>
-                    <option value="competition">Salón / certamen</option>
-                    <option value="talk">Charla</option>
-                    <option value="launch">Inauguración</option>
-                    <option value="other">Otro</option>
-                  </select>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.8rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Nombre de Obra Presentada</label>
+                    <input type="text" value={editing.artwork_name || ''} onChange={(e) => setEditing({ ...editing, artwork_name: e.target.value })}
+                      style={{ width: '100%', padding: '0.5rem', border: '1px solid #ded5cc' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Tipo Participación (Ej: Colectiva, Individual)</label>
+                    <input type="text" value={editing.participation_type || ''} onChange={(e) => setEditing({ ...editing, participation_type: e.target.value })}
+                      style={{ width: '100%', padding: '0.5rem', border: '1px solid #ded5cc' }} />
+                  </div>
+                </div>
+
+                <div style={{ marginTop: '0.8rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Descripción / Detalle</label>
+                  <textarea rows={3} value={editing.description || ''} onChange={(e) => setEditing({ ...editing, description: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #ded5cc', fontFamily: 'inherit' }} />
                 </div>
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>Fecha / Institución / Salón</label>
-                <input
-                  type="text"
-                  value={editing.date_label || ''}
-                  onChange={(e) => setEditing({ ...editing, date_label: e.target.value })}
-                  placeholder="Ej: 52 Salón Nacional de Artes Visuales · MUMBAT Tandil"
-                  style={{ width: '100%', padding: '0.6rem', border: '1px solid #ded5cc' }}
-                />
+              {/* Grupo 2: Institución & Fechas */}
+              <div style={{ borderTop: '1px solid #eee8e0', paddingTop: '1.2rem' }}>
+                <h4 style={{ margin: '0 0 0.8rem 0', fontSize: '0.95rem', color: '#746b64', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Institución & Fechas</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Institución</label>
+                    <input type="text" placeholder="Ej: Museo Bellas Artes" value={editing.institution || ''} onChange={(e) => setEditing({ ...editing, institution: e.target.value })}
+                      style={{ width: '100%', padding: '0.5rem', border: '1px solid #ded5cc' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Lugar / Sala (Venue)</label>
+                    <input type="text" placeholder="Ej: Sala Lidaura Sandrini" value={editing.venue || ''} onChange={(e) => setEditing({ ...editing, venue: e.target.value })}
+                      style={{ width: '100%', padding: '0.5rem', border: '1px solid #ded5cc' }} />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1rem', marginTop: '0.8rem' }}>
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Fecha de Inicio</label>
+                    <input type="date" value={editing.start_date || ''} onChange={(e) => setEditing({ ...editing, start_date: e.target.value })}
+                      style={{ width: '100%', padding: '0.45rem', border: '1px solid #ded5cc' }} />
+                  </div>
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Fecha de Cierre</label>
+                    <input type="date" value={editing.end_date || ''} onChange={(e) => setEditing({ ...editing, end_date: e.target.value })}
+                      style={{ width: '100%', padding: '0.45rem', border: '1px solid #ded5cc' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Año</label>
+                    <input type="text" value={editing.year || ''} onChange={(e) => setEditing({ ...editing, year: e.target.value })}
+                      style={{ width: '100%', padding: '0.5rem', border: '1px solid #ded5cc' }} />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.8rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Ciudad</label>
+                    <input type="text" value={editing.city || ''} onChange={(e) => setEditing({ ...editing, city: e.target.value })}
+                      style={{ width: '100%', padding: '0.5rem', border: '1px solid #ded5cc' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>País</label>
+                    <input type="text" value={editing.country || ''} onChange={(e) => setEditing({ ...editing, country: e.target.value })}
+                      style={{ width: '100%', padding: '0.5rem', border: '1px solid #ded5cc' }} />
+                  </div>
+                </div>
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>Descripción</label>
-                <textarea
-                  rows={3}
-                  value={editing.short_description || ''}
-                  onChange={(e) => setEditing({ ...editing, short_description: e.target.value })}
-                  style={{ width: '100%', padding: '0.6rem', border: '1px solid #ded5cc' }}
-                />
+              {/* Grupo 3: Publicación */}
+              <div style={{ borderTop: '1px solid #eee8e0', paddingTop: '1.2rem' }}>
+                <h4 style={{ margin: '0 0 0.8rem 0', fontSize: '0.95rem', color: '#746b64', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Publicación</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Estado</label>
+                    <select value={editing.status || 'draft'} onChange={(e) => setEditing({ ...editing, status: e.target.value as any })}
+                      style={{ width: '100%', padding: '0.55rem', border: '1px solid #ded5cc' }}>
+                      <option value="draft">Borrador</option>
+                      <option value="published">Publicado</option>
+                      <option value="hidden">Oculto</option>
+                      <option value="archived">Archivado</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Orden visual</label>
+                    <input type="number" placeholder="10, 20, 30..." value={editing.sort_order || ''} onChange={(e) => setEditing({ ...editing, sort_order: parseInt(e.target.value, 10) })}
+                      style={{ width: '100%', padding: '0.5rem', border: '1px solid #ded5cc' }} />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', paddingBottom: '0.6rem' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <input type="checkbox" checked={Boolean(editing.featured)} onChange={(e) => setEditing({ ...editing, featured: e.target.checked })} />
+                      <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Destacar Exhibición</span>
+                    </label>
+                  </div>
+                </div>
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>Imágenes</label>
+              {/* Grupo 4: SEO */}
+              <div style={{ borderTop: '1px solid #eee8e0', paddingTop: '1.2rem' }}>
+                <h4 style={{ margin: '0 0 0.8rem 0', fontSize: '0.95rem', color: '#746b64', textTransform: 'uppercase', letterSpacing: '0.05em' }}>SEO</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Título SEO</label>
+                    <input type="text" value={editing.seo_title || ''} onChange={(e) => setEditing({ ...editing, seo_title: e.target.value })}
+                      style={{ width: '100%', padding: '0.5rem', border: '1px solid #ded5cc' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Descripción SEO</label>
+                    <input type="text" value={editing.seo_description || ''} onChange={(e) => setEditing({ ...editing, seo_description: e.target.value })}
+                      style={{ width: '100%', padding: '0.5rem', border: '1px solid #ded5cc' }} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Grupo 5: Imágenes */}
+              <div style={{ borderTop: '1px solid #eee8e0', paddingTop: '1.2rem' }}>
+                <h4 style={{ margin: '0 0 0.8rem 0', fontSize: '0.95rem', color: '#746b64', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Imágenes</h4>
                 <MediaUploader
                   entityType="events"
                   entityId={editing.id}
@@ -251,7 +356,7 @@ export default function EventList({ onToast }: { onToast: (msg: string, type?: '
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem', borderTop: '1px solid #eee8e0', paddingTop: '1.5rem' }}>
                 <button type="button" className="btn-secondary-admin" onClick={() => setIsModalOpen(false)}>
                   Cancelar
                 </button>

@@ -1,8 +1,9 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 
 import { cmsApi } from '../cms/api'
+import { cmsAuth } from '../cms/auth'
 import type { CmsBootstrap, CmsContent, CmsSettings, EventItem, Product, Project } from '../cms/types'
-import { EXHIBITIONS, FEATURED_ARTWORK, MURALS, PRODUCTS, SOCIAL_LINKS } from '../data/landing'
+import { EXHIBITIONS, MURALS, PRODUCTS } from '../data/landing'
 
 interface CmsContextType {
   loading: boolean
@@ -14,58 +15,115 @@ interface CmsContextType {
   events: EventItem[]
   getContent: (key: string, fallback?: string) => string
   getSetting: (key: string, fallback?: any) => any
-  refetch: () => Promise<void>
+  refetch: () => Promise<boolean>
+  source: 'cms' | 'fallback' | null
 }
 
 const CmsContext = createContext<CmsContextType | null>(null)
 
+// Promesa compartida para deduplicar bootstrapping simultáneo en Dev (StrictMode)
+let publicBootstrapPromise: Promise<any> | null = null
+
 export function CmsProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [data, setData] = useState<CmsBootstrap>({})
+  const [data, setData] = useState<CmsBootstrap | null>(null)
+  const [source, setSource] = useState<'cms' | 'fallback' | null>(null)
 
-  const fetchBootstrap = async () => {
+  const fetchBootstrap = async (): Promise<boolean> => {
     setLoading(true)
     setError(null)
+    const isAdmin = window.location.pathname.startsWith('/admin')
+    const hasToken = cmsAuth.isAuthenticated()
+
     try {
-      const response = await cmsApi.getBootstrap()
+      let response
+      if (isAdmin && hasToken) {
+        response = await cmsApi.getAdminBootstrap()
+      } else {
+        // En parte pública o login sin token, usamos bootstrap público
+        if (!publicBootstrapPromise) {
+          publicBootstrapPromise = cmsApi.getPublicBootstrap()
+        }
+        response = await publicBootstrapPromise
+        // Limpiamos después del resultado para futuros refetchs manuales
+        publicBootstrapPromise = null
+      }
+
       if (response.success && response.data) {
         setData(response.data)
+        setSource('cms')
+        setLoading(false)
+        return true
       } else {
-        setError(response.error || 'No se pudieron obtener datos del CMS.')
+        // Fallback local solo en fallo real de CMS público
+        if (!isAdmin) {
+          setSource('fallback')
+          setData({})
+        } else {
+          setError(response.error || 'Sesión inválida o error en el panel administrativo.')
+        }
+        setLoading(false)
+        return false
       }
     } catch (err: any) {
-      setError(err?.message || 'Error de conexión con el CMS.')
-    } finally {
+      if (!isAdmin) {
+        setSource('fallback')
+        setData({})
+      } else {
+        setError(err?.message || 'Error de conexión con el servidor CMS.')
+      }
       setLoading(false)
+      return false
     }
   }
 
   useEffect(() => {
+    // Si es /admin pero no hay sesión guardada, no hace falta gatillar bootstrap público
+    const isAdmin = window.location.pathname.startsWith('/admin')
+    const hasToken = cmsAuth.isAuthenticated()
+    if (isAdmin && !hasToken) {
+      setLoading(false)
+      return
+    }
     fetchBootstrap()
   }, [])
 
+  const cleanLegacyUrl = (val: any): any => {
+    if (typeof val !== 'string') return val
+    // Limpieza legacy Markdown [https://www.instagram.com/morapetraglia/](https://www.instagram.com/morapetraglia/)
+    const mdLinkRegex = /\[([^\]]+)\]\(([^)]+)\)/
+    const match = val.match(mdLinkRegex)
+    if (match) {
+      let url = match[2]
+      if (url.startsWith('mailto:')) {
+        return url.replace('mailto:', '')
+      }
+      return url
+    }
+    return val
+  }
+
   const getContent = (key: string, fallback: string = ''): string => {
-    if (data.content && data.content[key]) {
-      return data.content[key]
+    if (data?.content && data.content[key]) {
+      return cleanLegacyUrl(data.content[key])
     }
     return fallback
   }
 
   const getSetting = (key: string, fallback: any = null): any => {
-    if (data.settings && data.settings[key] !== undefined) {
-      return data.settings[key]
+    if (data?.settings && data.settings[key] !== undefined) {
+      return cleanLegacyUrl(data.settings[key])
     }
     return fallback
   }
 
-  // Si el CMS entrega arrays (incluso vacíos si fue una respuesta válida), usarlos directamente sin filtrado frontend.
-  // El backend distingue entre SIN TOKEN (público) y CON TOKEN (panel admin con borradores).
-  // Solo se recurre al fallback de landing.ts si data.products/projects/events es undefined/null.
+  // Resolver productos
   const products: Product[] =
-    data.products !== undefined && data.products !== null
+    source === 'cms' && data?.products !== undefined && data.products !== null
       ? data.products
-      : PRODUCTS.map((p, idx) => ({
+      : source === 'fallback'
+      ? PRODUCTS.map((p, idx) => ({
           id: `fallback-p-${idx}`,
           name: p.title,
           subtype: 'print',
@@ -77,11 +135,14 @@ export function CmsProvider({ children }: { children: ReactNode }) {
           image: p.image,
           sort_order: idx,
         }))
+      : []
 
+  // Resolver proyectos (murales)
   const projects: Project[] =
-    data.projects !== undefined && data.projects !== null
+    source === 'cms' && data?.projects !== undefined && data.projects !== null
       ? data.projects
-      : MURALS.map((m, idx) => ({
+      : source === 'fallback'
+      ? MURALS.map((m, idx) => ({
           id: `fallback-m-${idx}`,
           title: m.title,
           subtype: 'mural',
@@ -92,11 +153,14 @@ export function CmsProvider({ children }: { children: ReactNode }) {
           span: m.span,
           sort_order: idx,
         }))
+      : []
 
+  // Resolver exhibiciones
   const events: EventItem[] =
-    data.events !== undefined && data.events !== null
+    source === 'cms' && data?.events !== undefined && data.events !== null
       ? data.events
-      : EXHIBITIONS.map((ex, idx) => ({
+      : source === 'fallback'
+      ? EXHIBITIONS.map((ex, idx) => ({
           id: `fallback-e-${idx}`,
           title: ex.title,
           subtype: 'exhibition',
@@ -106,20 +170,22 @@ export function CmsProvider({ children }: { children: ReactNode }) {
           image: ex.image,
           sort_order: idx,
         }))
+      : []
 
   return (
     <CmsContext.Provider
       value={{
         loading,
         error,
-        content: data.content || {},
-        settings: data.settings || {},
+        content: data?.content || {},
+        settings: data?.settings || {},
         products,
         projects,
         events,
         getContent,
         getSetting,
         refetch: fetchBootstrap,
+        source,
       }}
     >
       {children}

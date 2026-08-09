@@ -13,7 +13,7 @@ interface ProductListProps {
 type ActionMenuState = { productId: string } | null
 
 export default function ProductList({ onToast }: ProductListProps) {
-  const { products, refetch } = useCms()
+  const { products, refetch, getSetting } = useCms()
   const [filterType, setFilterType] = useState<string>('all')
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [search, setSearch] = useState<string>('')
@@ -30,14 +30,19 @@ export default function ProductList({ onToast }: ProductListProps) {
   })
 
   const handleCreate = () => {
+    const defaultCurrency = getSetting('currency') || 'ARS'
     setEditingProduct({
       name: '',
       subtype: 'print',
       status: 'draft',
       price: '',
-      currency: 'ARS',
-      availability: 'available',
+      currency: defaultCurrency,
+      stock: 1,
+      sale_mode: 'inquiry',
       media: [],
+      signed: false,
+      certificate: false,
+      featured: false,
     })
     setIsModalOpen(true)
   }
@@ -53,16 +58,26 @@ export default function ProductList({ onToast }: ProductListProps) {
     if (!editingProduct?.name) return
     const isNew = !editingProduct.id
     setSaving(true)
+
+    // Normalizar números y cadenas vacías para evitar null accidentales
+    const cleanProduct = {
+      ...editingProduct,
+      price: editingProduct.price !== '' && editingProduct.price !== undefined ? String(editingProduct.price) : '',
+      stock: editingProduct.stock !== undefined && editingProduct.stock !== null ? Number(editingProduct.stock) : 0,
+      width: editingProduct.width !== '' && editingProduct.width !== undefined ? String(editingProduct.width) : '',
+      height: editingProduct.height !== '' && editingProduct.height !== undefined ? String(editingProduct.height) : '',
+      depth: editingProduct.depth !== '' && editingProduct.depth !== undefined ? String(editingProduct.depth) : '',
+      year: editingProduct.year !== '' && editingProduct.year !== undefined ? String(editingProduct.year) : '',
+    }
+
     try {
-      const response = await cmsApi.saveProduct(editingProduct)
+      const response = await cmsApi.saveProduct(cleanProduct)
       if (response.success) {
         if (isNew && response.data?.id) {
-          // Primera creación: mantener modal abierto con el ID del backend
           setEditingProduct(response.data)
           onToast('Obra creada. Ya podés cargar sus imágenes.', 'success')
           await refetch()
         } else {
-          // Edición normal: cerrar
           onToast('Producto guardado correctamente', 'success')
           setIsModalOpen(false)
           await refetch()
@@ -119,6 +134,8 @@ export default function ProductList({ onToast }: ProductListProps) {
           <option value="print">Prints</option>
           <option value="original_artwork">Obras originales</option>
           <option value="physical_product">Producto físico</option>
+          <option value="service">Servicio</option>
+          <option value="other">Otro</option>
         </select>
         <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} style={{ padding: '0.6rem 1rem', border: '1px solid #ded5cc' }}>
           <option value="all">Todos los estados</option>
@@ -195,6 +212,18 @@ export default function ProductList({ onToast }: ProductListProps) {
                           Marcar vendido
                         </button>
                       )}
+                      {prod.status !== 'out_of_stock' && (
+                        <button style={{ display: 'block', width: '100%', padding: '0.6rem 1rem', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.85rem' }}
+                          onClick={() => executeAction(prod.id, cmsApi.markProductOutOfStock.bind(cmsApi), 'Producto marcado sin stock')}>
+                          Marcar sin stock
+                        </button>
+                      )}
+                      {prod.status !== 'draft' && (
+                        <button style={{ display: 'block', width: '100%', padding: '0.6rem 1rem', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.85rem' }}
+                          onClick={() => executeAction(prod.id, cmsApi.restoreProduct.bind(cmsApi), 'Producto devuelto a Borrador')}>
+                          Volver a borrador
+                        </button>
+                      )}
                       {prod.status === 'archived' ? (
                         <button style={{ display: 'block', width: '100%', padding: '0.6rem 1rem', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.85rem' }}
                           onClick={() => executeAction(prod.id, cmsApi.restoreProduct.bind(cmsApi), 'Producto restaurado como borrador')}>
@@ -221,76 +250,195 @@ export default function ProductList({ onToast }: ProductListProps) {
       {/* Modal Edición */}
       {isModalOpen && editingProduct && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div style={{ background: '#fff', border: '1px solid #ded5cc', maxWidth: '700px', width: '100%', maxHeight: '90vh', overflowY: 'auto', padding: '2rem' }}>
-            <h3 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '1.8rem', margin: '0 0 1.5rem 0' }}>
-              {editingProduct.id ? 'Editar Producto' : 'Nuevo Producto'}
+          <div style={{ background: '#fff', border: '1px solid #ded5cc', maxWidth: '750px', width: '100%', maxHeight: '90vh', overflowY: 'auto', padding: '2.5rem' }}>
+            <h3 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '2rem', margin: '0 0 1.5rem 0', borderBottom: '1px solid #ded5cc', paddingBottom: '0.5rem' }}>
+              {editingProduct.id ? 'Editar Producto / Obra' : 'Nuevo Producto / Obra'}
             </h3>
 
-            <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>Nombre</label>
-                  <input type="text" required value={editingProduct.name || ''} onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
-                    style={{ width: '100%', padding: '0.6rem', border: '1px solid #ded5cc' }} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>Tipo</label>
-                  <select value={editingProduct.subtype || 'print'} onChange={(e) => setEditingProduct({ ...editingProduct, subtype: e.target.value as SubtypeProduct })}
-                    style={{ width: '100%', padding: '0.6rem', border: '1px solid #ded5cc' }}>
-                    <option value="print">Print</option>
-                    <option value="original_artwork">Obra original</option>
-                    <option value="physical_product">Producto físico</option>
-                  </select>
-                </div>
-              </div>
-
+            <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              
+              {/* Grupo 1: Información Básica */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>Descripción corta</label>
-                <input type="text" value={editingProduct.short_description || ''} onChange={(e) => setEditingProduct({ ...editingProduct, short_description: e.target.value })}
-                  style={{ width: '100%', padding: '0.6rem', border: '1px solid #ded5cc' }} />
+                <h4 style={{ margin: '0 0 0.8rem 0', fontSize: '0.95rem', color: '#746b64', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Información Básica</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Nombre / Título</label>
+                    <input type="text" required value={editingProduct.name || ''} onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
+                      style={{ width: '100%', padding: '0.5rem', border: '1px solid #ded5cc' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Tipo de Obra</label>
+                    <select value={editingProduct.subtype || 'print'} onChange={(e) => setEditingProduct({ ...editingProduct, subtype: e.target.value as SubtypeProduct })}
+                      style={{ width: '100%', padding: '0.55rem', border: '1px solid #ded5cc' }}>
+                      <option value="print">Print</option>
+                      <option value="original_artwork">Obra original</option>
+                      <option value="physical_product">Producto físico</option>
+                      <option value="service">Servicio</option>
+                      <option value="other">Otro</option>
+                    </select>
+                  </div>
+                </div>
+                <div style={{ marginTop: '0.8rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Descripción corta (ficha técnica / detalles)</label>
+                  <input type="text" value={editingProduct.short_description || ''} onChange={(e) => setEditingProduct({ ...editingProduct, short_description: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #ded5cc' }} />
+                </div>
+                <div style={{ marginTop: '0.8rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Descripción completa / Relato</label>
+                  <textarea rows={3} value={editingProduct.description || ''} onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #ded5cc', fontFamily: 'inherit' }} />
+                </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>Técnica</label>
-                  <input type="text" value={editingProduct.technique || ''} onChange={(e) => setEditingProduct({ ...editingProduct, technique: e.target.value })}
-                    style={{ width: '100%', padding: '0.6rem', border: '1px solid #ded5cc' }} />
+              {/* Grupo 2: Características Físicas */}
+              <div style={{ borderTop: '1px solid #eee8e0', paddingTop: '1.2rem' }}>
+                <h4 style={{ margin: '0 0 0.8rem 0', fontSize: '0.95rem', color: '#746b64', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Ficha Técnica & Edición</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Técnica</label>
+                    <input type="text" placeholder="Acrílico, óleo..." value={editingProduct.technique || ''} onChange={(e) => setEditingProduct({ ...editingProduct, technique: e.target.value })}
+                      style={{ width: '100%', padding: '0.5rem', border: '1px solid #ded5cc' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Soporte</label>
+                    <input type="text" placeholder="Lienzo, bastidor..." value={editingProduct.support || ''} onChange={(e) => setEditingProduct({ ...editingProduct, support: e.target.value })}
+                      style={{ width: '100%', padding: '0.5rem', border: '1px solid #ded5cc' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Año</label>
+                    <input type="text" value={editingProduct.year || ''} onChange={(e) => setEditingProduct({ ...editingProduct, year: e.target.value })}
+                      style={{ width: '100%', padding: '0.5rem', border: '1px solid #ded5cc' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Medida en texto</label>
+                    <input type="text" placeholder="50 x 70 cm" value={editingProduct.size_label || ''} onChange={(e) => setEditingProduct({ ...editingProduct, size_label: e.target.value })}
+                      style={{ width: '100%', padding: '0.5rem', border: '1px solid #ded5cc' }} />
+                  </div>
                 </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>Medida visible</label>
-                  <input type="text" placeholder="Ej: 50 x 70 cm" value={editingProduct.size_label || ''} onChange={(e) => setEditingProduct({ ...editingProduct, size_label: e.target.value })}
-                    style={{ width: '100%', padding: '0.6rem', border: '1px solid #ded5cc' }} />
-                </div>
-              </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>Precio (ARS)</label>
-                  <input type="text" value={editingProduct.price || ''} onChange={(e) => setEditingProduct({ ...editingProduct, price: e.target.value })}
-                    placeholder="Ej: 85000" style={{ width: '100%', padding: '0.6rem', border: '1px solid #ded5cc' }} />
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1rem', marginTop: '0.8rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Ancho (cm)</label>
+                    <input type="number" step="any" value={editingProduct.width || ''} onChange={(e) => setEditingProduct({ ...editingProduct, width: e.target.value })}
+                      style={{ width: '100%', padding: '0.5rem', border: '1px solid #ded5cc' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Alto (cm)</label>
+                    <input type="number" step="any" value={editingProduct.height || ''} onChange={(e) => setEditingProduct({ ...editingProduct, height: e.target.value })}
+                      style={{ width: '100%', padding: '0.5rem', border: '1px solid #ded5cc' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Espesor (cm)</label>
+                    <input type="number" step="any" value={editingProduct.depth || ''} onChange={(e) => setEditingProduct({ ...editingProduct, depth: e.target.value })}
+                      style={{ width: '100%', padding: '0.5rem', border: '1px solid #ded5cc' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Tipo Edición</label>
+                    <input type="text" placeholder="Serie limitada / Única" value={editingProduct.edition_type || ''} onChange={(e) => setEditingProduct({ ...editingProduct, edition_type: e.target.value })}
+                      style={{ width: '100%', padding: '0.5rem', border: '1px solid #ded5cc' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Total Edición</label>
+                    <input type="text" placeholder="Ej: 50" value={editingProduct.edition_total || ''} onChange={(e) => setEditingProduct({ ...editingProduct, edition_total: e.target.value })}
+                      style={{ width: '100%', padding: '0.5rem', border: '1px solid #ded5cc' }} />
+                  </div>
                 </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>Estado</label>
-                  <select value={editingProduct.status || 'draft'} onChange={(e) => setEditingProduct({ ...editingProduct, status: e.target.value as ProductStatus })}
-                    style={{ width: '100%', padding: '0.6rem', border: '1px solid #ded5cc' }}>
-                    <option value="draft">Borrador</option>
-                    <option value="published">Publicado</option>
-                    <option value="hidden">Oculto</option>
-                    <option value="sold">Vendido</option>
-                    <option value="out_of_stock">Sin stock</option>
-                    <option value="archived">Archivado</option>
-                  </select>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', paddingBottom: '0.6rem' }}>
-                    <input type="checkbox" checked={Boolean(editingProduct.featured)} onChange={(e) => setEditingProduct({ ...editingProduct, featured: e.target.checked })} />
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Obra destacada</span>
+
+                <div style={{ display: 'flex', gap: '2rem', marginTop: '0.8rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <input type="checkbox" checked={Boolean(editingProduct.signed)} onChange={(e) => setEditingProduct({ ...editingProduct, signed: e.target.checked })} />
+                    <span style={{ fontSize: '0.85rem' }}>Firmado por Mora</span>
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <input type="checkbox" checked={Boolean(editingProduct.certificate)} onChange={(e) => setEditingProduct({ ...editingProduct, certificate: e.target.checked })} />
+                    <span style={{ fontSize: '0.85rem' }}>Incluye Certificado de Autenticidad</span>
                   </label>
                 </div>
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>Imágenes</label>
+              {/* Grupo 3: Venta & Publicación */}
+              <div style={{ borderTop: '1px solid #eee8e0', paddingTop: '1.2rem' }}>
+                <h4 style={{ margin: '0 0 0.8rem 0', fontSize: '0.95rem', color: '#746b64', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Comercialización & Estado</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Precio</label>
+                    <input type="text" value={editingProduct.price || ''} onChange={(e) => setEditingProduct({ ...editingProduct, price: e.target.value })}
+                      placeholder="Ej: 85000" style={{ width: '100%', padding: '0.5rem', border: '1px solid #ded5cc' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Moneda</label>
+                    <input type="text" value={editingProduct.currency || 'ARS'} onChange={(e) => setEditingProduct({ ...editingProduct, currency: e.target.value })}
+                      style={{ width: '100%', padding: '0.5rem', border: '1px solid #ded5cc' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Modo de venta</label>
+                    <select value={editingProduct.sale_mode || 'inquiry'} onChange={(e) => setEditingProduct({ ...editingProduct, sale_mode: e.target.value })}
+                      style={{ width: '100%', padding: '0.55rem', border: '1px solid #ded5cc' }}>
+                      <option value="inquiry">Consultar</option>
+                      <option value="direct">Compra Directa (MP)</option>
+                      <option value="unavailable">No disponible</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Stock actual</label>
+                    <input type="number" value={editingProduct.stock ?? 1} onChange={(e) => setEditingProduct({ ...editingProduct, stock: parseInt(e.target.value, 10) })}
+                      style={{ width: '100%', padding: '0.5rem', border: '1px solid #ded5cc' }} />
+                  </div>
+                </div>
+
+                <div style={{ marginTop: '0.8rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Enlace de pago (Mercado Pago / etc.)</label>
+                  <input type="url" placeholder="https://mpago.la/..." value={editingProduct.payment_link || ''} onChange={(e) => setEditingProduct({ ...editingProduct, payment_link: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #ded5cc' }} />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginTop: '0.8rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Estado de publicación</label>
+                    <select value={editingProduct.status || 'draft'} onChange={(e) => setEditingProduct({ ...editingProduct, status: e.target.value as ProductStatus })}
+                      style={{ width: '100%', padding: '0.55rem', border: '1px solid #ded5cc' }}>
+                      <option value="draft">Borrador</option>
+                      <option value="published">Publicado</option>
+                      <option value="hidden">Oculto</option>
+                      <option value="sold">Vendido</option>
+                      <option value="out_of_stock">Sin stock</option>
+                      <option value="archived">Archivado</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Orden visual</label>
+                    <input type="number" placeholder="10, 20, 30..." value={editingProduct.sort_order || ''} onChange={(e) => setEditingProduct({ ...editingProduct, sort_order: parseInt(e.target.value, 10) })}
+                      style={{ width: '100%', padding: '0.5rem', border: '1px solid #ded5cc' }} />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', paddingBottom: '0.6rem' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <input type="checkbox" checked={Boolean(editingProduct.featured)} onChange={(e) => setEditingProduct({ ...editingProduct, featured: e.target.checked })} />
+                      <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Obra destacada</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Grupo 4: SEO */}
+              <div style={{ borderTop: '1px solid #eee8e0', paddingTop: '1.2rem' }}>
+                <h4 style={{ margin: '0 0 0.8rem 0', fontSize: '0.95rem', color: '#746b64', textTransform: 'uppercase', letterSpacing: '0.05em' }}>SEO</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Título SEO</label>
+                    <input type="text" value={editingProduct.seo_title || ''} onChange={(e) => setEditingProduct({ ...editingProduct, seo_title: e.target.value })}
+                      style={{ width: '100%', padding: '0.5rem', border: '1px solid #ded5cc' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem' }}>Descripción SEO</label>
+                    <input type="text" value={editingProduct.seo_description || ''} onChange={(e) => setEditingProduct({ ...editingProduct, seo_description: e.target.value })}
+                      style={{ width: '100%', padding: '0.5rem', border: '1px solid #ded5cc' }} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Grupo 5: Imágenes */}
+              <div style={{ borderTop: '1px solid #eee8e0', paddingTop: '1.2rem' }}>
+                <h4 style={{ margin: '0 0 0.8rem 0', fontSize: '0.95rem', color: '#746b64', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Imágenes</h4>
                 <MediaUploader
                   entityType="products"
                   entityId={editingProduct.id}
@@ -300,7 +448,7 @@ export default function ProductList({ onToast }: ProductListProps) {
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem', borderTop: '1px solid #eee8e0', paddingTop: '1.5rem' }}>
                 <button type="button" className="btn-secondary-admin" onClick={() => setIsModalOpen(false)}>Cancelar</button>
                 <button type="submit" className="btn-primary-admin" disabled={saving}>{saving ? 'Guardando...' : 'Guardar Cambios'}</button>
               </div>

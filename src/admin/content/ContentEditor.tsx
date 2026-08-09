@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useState, type FormEvent, useEffect } from 'react'
 import { cmsApi } from '../../cms/api'
 import { useCms } from '../../context/CmsContext'
 
@@ -6,25 +6,56 @@ interface ContentEditorProps {
   onToast: (msg: string, type?: 'success' | 'error') => void
 }
 
+const DEFAULT_VALUES: Record<string, string> = {
+  'header.announcement': 'Prints de edición limitada disponibles · Envíos a Argentina y exterior',
+  'hero.kicker': 'Artista plástica y muralista · La Plata',
+  'hero.title_part1': 'Mora',
+  'hero.title_part2': 'Petraglia',
+  'hero.description': 'Retratos pop, murales y cultura popular argentina en una obra de color intenso, memoria urbana y personajes que vuelven a mirar desde la calle.',
+  'hero.cta_primary': 'Ver Prints',
+  'hero.cta_secondary': 'Murales',
+  'intro.kicker': 'Mora Petraglia',
+  'intro.title': 'La calle, los íconos y el gesto pop.',
+  'intro.copy1': 'Desde su archivo de Instagram aparece una Mora en movimiento: retratos de personajes argentinos, murales con frases de barrio, fotos de proceso, escenas de muestra y una paleta que mezcla rosa, azul, rojo y turquesa sin pedir permiso.',
+  'intro.copy2': 'Este recorrido toma esa energía como punto de partida: ritmo, movimiento, obra real y una galería concentrada en el vínculo entre pintura, pared y cultura popular.',
+  'intro.marquee': 'Murales · Cuadros · Retratos Pop · Pintura Urbana · Obra disponible',
+  'prints.kicker': 'Prints',
+  'prints.title': 'Prints y obra disponible.',
+  'prints.subtitle': 'Prints fine art y piezas disponibles para consulta. Los valores son de referencia y luego quedarán conectados a Mercado Pago.',
+  'murales.kicker': 'Murales',
+  'murales.title': 'Galería de murales.',
+  'murales.subtitle': 'Paredes, procesos y escenas de gran escala. Pasá el cursor por cada imagen para ver el detalle.',
+  'about.kicker': 'Sobre Mora',
+  'about.title': 'Una mirada entre taller, vereda y cultura popular.',
+  'about.copy1': 'Mora Petraglia trabaja desde La Plata con una pintura de retrato expresiva, colores saturados y una sensibilidad muy conectada con personajes, frases e imágenes que forman parte del imaginario argentino.',
+  'about.copy2': 'En sus redes conviven cuadros, murales, momentos de proceso y registros de exhibiciones. Esa mezcla marca el nuevo tono del sitio: menos catálogo quieto, más recorrido visual por una obra en circulación.',
+  'about.image_url': '',
+  'about.cta_label': 'Escribirle a Mora',
+  'exhibiciones.kicker': 'Exhibiciones',
+  'exhibiciones.title': 'Muestras, obra pública y encuentros.',
+  'exhibiciones.subtitle': 'Registros de obra en exhibición, encuentros culturales y momentos donde la pintura sale a dialogar con público.',
+  'contacto.kicker': 'Contacto',
+  'contacto.title': 'Encargos, obra disponible y proyectos.',
+  'contacto.copy': 'Dejá una consulta para prints, obra original, murales privados o propuestas de exhibición. Para presupuestos, sumá teléfono, medidas, ubicación y una descripción breve.',
+  'footer.location': 'La Plata, Buenos Aires, Argentina.',
+}
+
 export default function ContentEditor({ onToast }: ContentEditorProps) {
   const { content, refetch } = useCms()
-  const [formState, setFormState] = useState<Record<string, string>>({
-    'header.announcement': content['header.announcement'] || 'Prints de edición limitada disponibles · Envíos a Argentina y exterior',
-    'hero.kicker': content['hero.kicker'] || 'Artista plástica y muralista · La Plata',
-    'hero.title_part1': content['hero.title_part1'] || 'Mora',
-    'hero.title_part2': content['hero.title_part2'] || 'Petraglia',
-    'hero.description': content['hero.description'] || 'Retratos pop, murales y cultura popular argentina en una obra de color intenso, memoria urbana y personajes que vuelven a mirar desde la calle.',
-    'intro.kicker': content['intro.kicker'] || 'Mora Petraglia',
-    'intro.title': content['intro.title'] || 'La calle, los íconos y el gesto pop.',
-    'intro.copy1': content['intro.copy1'] || 'Desde su archivo de Instagram aparece una Mora en movimiento: retratos de personajes argentinos, murales con frases de barrio, fotos de proceso, escenas de muestra y una paleta que mezcla rosa, azul, rojo y turquesa sin pedir permiso.',
-    'intro.copy2': content['intro.copy2'] || 'Este recorrido toma esa energía como punto de partida: ritmo, movimiento, obra real y una galería concentrada en el vínculo entre pintura, pared y cultura popular.',
-    'prints.title': content['prints.title'] || 'Prints y obra disponible.',
-    'murales.title': content['murales.title'] || 'Galería de murales.',
-    'about.title': content['about.title'] || 'Una mirada entre taller, vereda y cultura popular.',
-    'exhibiciones.title': content['exhibiciones.title'] || 'Muestras, obra pública y encuentros.',
-    'contacto.title': content['contacto.title'] || 'Encargos, obra disponible y proyectos.',
-  })
+  const [formState, setFormState] = useState<Record<string, string>>({})
+  const [dirtyFields, setDirtyFields] = useState<Record<string, boolean>>({})
   const [saving, setSaving] = useState(false)
+
+  // Sincronización controlada sin pisar campos editándose (dirty)
+  useEffect(() => {
+    const newState: Record<string, string> = { ...formState }
+    Object.keys(DEFAULT_VALUES).forEach((key) => {
+      if (!dirtyFields[key]) {
+        newState[key] = content[key] !== undefined ? content[key] : DEFAULT_VALUES[key]
+      }
+    })
+    setFormState(newState)
+  }, [content])
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -33,6 +64,7 @@ export default function ContentEditor({ onToast }: ContentEditorProps) {
       const response = await cmsApi.saveContent(formState)
       if (response.success) {
         onToast('Textos guardados correctamente', 'success')
+        setDirtyFields({})
         await refetch()
       } else {
         onToast(response.error || 'No se pudieron guardar los textos', 'error')
@@ -46,13 +78,15 @@ export default function ContentEditor({ onToast }: ContentEditorProps) {
 
   const handleChange = (key: string, value: string) => {
     setFormState((prev) => ({ ...prev, [key]: value }))
+    setDirtyFields((prev) => ({ ...prev, [key]: true }))
   }
 
   const sections = [
     {
-      name: 'Header / Barra Superior',
+      name: 'Cabecera (Header / Footer)',
       fields: [
         { key: 'header.announcement', label: 'Anuncio superior', type: 'input' },
+        { key: 'footer.location', label: 'Ubicación en el pie de página', type: 'input' },
       ],
     },
     {
@@ -62,6 +96,8 @@ export default function ContentEditor({ onToast }: ContentEditorProps) {
         { key: 'hero.title_part1', label: 'Título Línea 1', type: 'input' },
         { key: 'hero.title_part2', label: 'Título Línea 2', type: 'input' },
         { key: 'hero.description', label: 'Descripción principal', type: 'textarea' },
+        { key: 'hero.cta_primary', label: 'Botón Primario (ej: Ver Prints)', type: 'input' },
+        { key: 'hero.cta_secondary', label: 'Botón Secundario (ej: Murales)', type: 'input' },
       ],
     },
     {
@@ -71,16 +107,50 @@ export default function ContentEditor({ onToast }: ContentEditorProps) {
         { key: 'intro.title', label: 'Título', type: 'input' },
         { key: 'intro.copy1', label: 'Párrafo 1', type: 'textarea' },
         { key: 'intro.copy2', label: 'Párrafo 2', type: 'textarea' },
+        { key: 'intro.marquee', label: 'Texto Marquesina Desplazable (Marquee)', type: 'input' },
       ],
     },
     {
-      name: 'Títulos de Secciones',
+      name: 'Sección Prints',
       fields: [
-        { key: 'prints.title', label: 'Título de Prints', type: 'input' },
-        { key: 'murales.title', label: 'Título de Murales', type: 'input' },
-        { key: 'about.title', label: 'Título Sobre Mora', type: 'input' },
-        { key: 'exhibiciones.title', label: 'Título Exhibiciones', type: 'input' },
-        { key: 'contacto.title', label: 'Título Contacto', type: 'input' },
+        { key: 'prints.kicker', label: 'Kicker', type: 'input' },
+        { key: 'prints.title', label: 'Título', type: 'input' },
+        { key: 'prints.subtitle', label: 'Subtítulo / Bajada', type: 'textarea' },
+      ],
+    },
+    {
+      name: 'Sección Murales',
+      fields: [
+        { key: 'murales.kicker', label: 'Kicker', type: 'input' },
+        { key: 'murales.title', label: 'Título', type: 'input' },
+        { key: 'murales.subtitle', label: 'Subtítulo / Bajada', type: 'textarea' },
+      ],
+    },
+    {
+      name: 'Sobre Mora (Bio)',
+      fields: [
+        { key: 'about.kicker', label: 'Kicker', type: 'input' },
+        { key: 'about.title', label: 'Título', type: 'input' },
+        { key: 'about.copy1', label: 'Párrafo Bio 1', type: 'textarea' },
+        { key: 'about.copy2', label: 'Párrafo Bio 2', type: 'textarea' },
+        { key: 'about.cta_label', label: 'Etiqueta del Botón de Contacto', type: 'input' },
+        { key: 'about.image_url', label: 'URL de Imagen de Mora (About)', type: 'input' },
+      ],
+    },
+    {
+      name: 'Sección Exhibiciones',
+      fields: [
+        { key: 'exhibiciones.kicker', label: 'Kicker', type: 'input' },
+        { key: 'exhibiciones.title', label: 'Título', type: 'input' },
+        { key: 'exhibiciones.subtitle', label: 'Subtítulo / Bajada', type: 'textarea' },
+      ],
+    },
+    {
+      name: 'Sección Contacto',
+      fields: [
+        { key: 'contacto.kicker', label: 'Kicker', type: 'input' },
+        { key: 'contacto.title', label: 'Título', type: 'input' },
+        { key: 'contacto.copy', label: 'Texto descriptivo del formulario', type: 'textarea' },
       ],
     },
   ]

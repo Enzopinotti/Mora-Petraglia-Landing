@@ -1,17 +1,24 @@
-/**
- * Renders an image thumbnail for the admin panel.
- * If src is empty/falsy, shows a neutral placeholder square instead of
- * a broken image request.
- */
+import { useState } from 'react'
+
 interface AdminThumbProps {
   src?: string
   alt: string
 }
 
 export function AdminThumb({ src, alt }: AdminThumbProps) {
-  if (src) {
-    return <img src={src} alt={alt} className="thumb" />
+  const [hasError, setHasError] = useState(false)
+
+  if (src && !hasError) {
+    return (
+      <img
+        src={src}
+        alt={alt}
+        className="thumb"
+        onError={() => setHasError(true)}
+      />
+    )
   }
+
   return (
     <div
       className="thumb"
