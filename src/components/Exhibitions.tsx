@@ -33,7 +33,7 @@ export default function Exhibitions() {
             return (
               <article className="exhibition-card" key={item.id || item.title} data-reveal>
                 <div className="exhibition-card__image">
-                  <img src={imgSrc} alt={item.title} loading="lazy" style={{ objectPosition: 'center center' }} />
+                  {imgSrc && <img src={imgSrc} alt={item.title} loading="lazy" style={{ objectPosition: 'center center' }} />}
                 </div>
                 <div className="exhibition-card__copy">
                   <p>{dateLabel}</p>

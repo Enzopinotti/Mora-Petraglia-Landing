@@ -71,7 +71,7 @@ export default function Prints() {
             return (
               <article className="print-card" key={product.id || product.name} data-reveal>
                 <div className="print-card__image">
-                  <img src={imgSrc} alt={product.name} loading="lazy" style={imageStyle} />
+                  {imgSrc && <img src={imgSrc} alt={product.name} loading="lazy" style={imageStyle} />}
                 </div>
                 <div className="print-card__copy">
                   <p>{editionLabel}</p>
@@ -103,7 +103,7 @@ export default function Prints() {
 
         <article id="obra" className="featured-artwork-panel" data-reveal>
           <div className="featured-artwork-panel__media">
-            <img src={featImage} alt={featTitle} loading="lazy" />
+            {featImage && <img src={featImage} alt={featTitle} loading="lazy" />}
           </div>
           <div className="featured-artwork-panel__copy">
             <p className="featured-artwork-panel__kicker">{featEdition}</p>

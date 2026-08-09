@@ -175,7 +175,10 @@ export default function MediaUploader({ entityType, entityId, media = [], onChan
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '1rem', marginTop: '0.5rem' }}>
         {media.map((item, index) => (
           <div key={item.id || index} style={{ border: '1px solid #ded5cc', background: '#ffffff', padding: '0.5rem', borderRadius: 0, position: 'relative' }}>
-            <img src={item.url} alt={item.alt || ''} style={{ width: '100%', height: '110px', objectFit: 'cover' }} />
+            {item.url
+              ? <img src={item.url} alt={item.alt || ''} style={{ width: '100%', height: '110px', objectFit: 'cover' }} />
+              : <div style={{ width: '100%', height: '110px', background: '#f0ebe4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#b0a599', fontSize: '1.4rem' }}>🖼</div>
+            }
 
             <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
               <select

@@ -3,6 +3,7 @@ import { cmsApi } from '../../cms/api'
 import { getCoverImage, LABELS } from '../../cms/helpers'
 import type { Project } from '../../cms/types'
 import { useCms } from '../../context/CmsContext'
+import { AdminThumb } from '../components/AdminThumb'
 import MediaUploader from '../media/MediaUploader'
 
 type ActionMenuState = { projectId: string } | null
@@ -36,13 +37,20 @@ export default function ProjectList({ onToast }: { onToast: (msg: string, type?:
   const handleSave = async (e: FormEvent) => {
     e.preventDefault()
     if (!editing?.title) return
+    const isNew = !editing.id
     setSaving(true)
     try {
       const response = await cmsApi.saveProject(editing)
       if (response.success) {
-        onToast('Mural guardado correctamente', 'success')
-        setIsModalOpen(false)
-        await refetch()
+        if (isNew && response.data?.id) {
+          setEditing(response.data)
+          onToast('Mural creado. Ya podés cargar sus imágenes.', 'success')
+          await refetch()
+        } else {
+          onToast('Mural guardado correctamente', 'success')
+          setIsModalOpen(false)
+          await refetch()
+        }
       } else {
         onToast(response.error || 'No se pudo guardar el mural', 'error')
       }
@@ -114,7 +122,7 @@ export default function ProjectList({ onToast }: { onToast: (msg: string, type?:
             {filtered.map((mural) => (
               <tr key={mural.id || mural.title}>
                 <td>
-                  <img src={getCoverImage(mural.media, mural.image)} alt={mural.title} className="thumb" />
+                  <AdminThumb src={getCoverImage(mural.media, mural.image)} alt={mural.title} />
                 </td>
                 <td>
                   <strong>{mural.title}</strong>

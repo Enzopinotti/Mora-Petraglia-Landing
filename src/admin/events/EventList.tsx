@@ -3,6 +3,7 @@ import { cmsApi } from '../../cms/api'
 import { getCoverImage, LABELS } from '../../cms/helpers'
 import type { EventItem, SubtypeEvent } from '../../cms/types'
 import { useCms } from '../../context/CmsContext'
+import { AdminThumb } from '../components/AdminThumb'
 import MediaUploader from '../media/MediaUploader'
 
 type ActionMenuState = { eventId: string } | null
@@ -35,13 +36,20 @@ export default function EventList({ onToast }: { onToast: (msg: string, type?: '
   const handleSave = async (e: FormEvent) => {
     e.preventDefault()
     if (!editing?.title) return
+    const isNew = !editing.id
     setSaving(true)
     try {
       const response = await cmsApi.saveEvent(editing)
       if (response.success) {
-        onToast('Exhibición guardada correctamente', 'success')
-        setIsModalOpen(false)
-        await refetch()
+        if (isNew && response.data?.id) {
+          setEditing(response.data)
+          onToast('Exhibición creada. Ya podés cargar sus imágenes.', 'success')
+          await refetch()
+        } else {
+          onToast('Exhibición guardada correctamente', 'success')
+          setIsModalOpen(false)
+          await refetch()
+        }
       } else {
         onToast(response.error || 'No se pudo guardar la exhibición', 'error')
       }
@@ -114,7 +122,7 @@ export default function EventList({ onToast }: { onToast: (msg: string, type?: '
             {filtered.map((ev) => (
               <tr key={ev.id || ev.title}>
                 <td>
-                  <img src={getCoverImage(ev.media, ev.image)} alt={ev.title} className="thumb" />
+                  <AdminThumb src={getCoverImage(ev.media, ev.image)} alt={ev.title} />
                 </td>
                 <td>
                   <strong>{ev.title}</strong>

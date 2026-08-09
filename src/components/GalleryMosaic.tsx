@@ -32,7 +32,7 @@ export default function GalleryMosaic() {
 
             return (
               <article key={mural.id || mural.title} className={`gallery-item${mural.span ? ` gallery-item--${mural.span}` : ''}`} data-reveal>
-                <img src={imgSrc} alt={mural.title} loading="lazy" data-parallax="-6" />
+                {imgSrc && <img src={imgSrc} alt={mural.title} loading="lazy" data-parallax="-6" />}
                 <div className="gallery-item__caption">
                   <p>
                     {typeLabel} · {locationLabel}

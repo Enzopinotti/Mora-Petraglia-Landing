@@ -3,6 +3,7 @@ import { cmsApi } from '../../cms/api'
 import { formatPrice, getCoverImage, LABELS } from '../../cms/helpers'
 import type { Product, ProductStatus, SubtypeProduct } from '../../cms/types'
 import { useCms } from '../../context/CmsContext'
+import { AdminThumb } from '../components/AdminThumb'
 import MediaUploader from '../media/MediaUploader'
 
 interface ProductListProps {
@@ -50,13 +51,22 @@ export default function ProductList({ onToast }: ProductListProps) {
   const handleSave = async (e: FormEvent) => {
     e.preventDefault()
     if (!editingProduct?.name) return
+    const isNew = !editingProduct.id
     setSaving(true)
     try {
       const response = await cmsApi.saveProduct(editingProduct)
       if (response.success) {
-        onToast('Producto guardado correctamente', 'success')
-        setIsModalOpen(false)
-        await refetch()
+        if (isNew && response.data?.id) {
+          // Primera creación: mantener modal abierto con el ID del backend
+          setEditingProduct(response.data)
+          onToast('Obra creada. Ya podés cargar sus imágenes.', 'success')
+          await refetch()
+        } else {
+          // Edición normal: cerrar
+          onToast('Producto guardado correctamente', 'success')
+          setIsModalOpen(false)
+          await refetch()
+        }
       } else {
         onToast(response.error || 'No se pudo guardar el producto', 'error')
       }
@@ -138,7 +148,7 @@ export default function ProductList({ onToast }: ProductListProps) {
             {filtered.map((prod) => (
               <tr key={prod.id || prod.name}>
                 <td>
-                  <img src={getCoverImage(prod.media, prod.image)} alt={prod.name} className="thumb" />
+                  <AdminThumb src={getCoverImage(prod.media, prod.image)} alt={prod.name} />
                 </td>
                 <td>
                   <strong>{prod.name}</strong>
