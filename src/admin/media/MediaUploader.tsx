@@ -22,6 +22,15 @@ export default function MediaUploader({ entityType, entityId, media = [], onChan
     )
   }
 
+  const readFileAsDataURL = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = (err) => reject(err)
+      reader.readAsDataURL(file)
+    })
+  }
+
   const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files || files.length === 0) return
@@ -39,36 +48,33 @@ export default function MediaUploader({ entityType, entityId, media = [], onChan
 
     setUploading(true)
     try {
-      const reader = new FileReader()
-      reader.onload = async () => {
-        const base64Str = (reader.result as string).split(',')[1]
-        const role = media.length === 0 ? 'cover' : 'gallery'
-        const altText = file.name.replace(/\.[^/.]+$/, '')
+      const dataUrl = await readFileAsDataURL(file)
+      const base64Str = dataUrl.split(',')[1]
+      const role = media.length === 0 ? 'cover' : 'gallery'
+      const altText = file.name.replace(/\.[^/.]+$/, '')
 
-        const response = await cmsApi.uploadMedia({
-          fileName: file.name,
-          mimeType: file.type,
-          base64: base64Str,
-          entityType,
-          entityId,
-          role,
-          altText,
-        })
+      const response = await cmsApi.uploadMedia({
+        fileName: file.name,
+        mimeType: file.type,
+        base64: base64Str,
+        entityType,
+        entityId,
+        role,
+        altText,
+      })
 
-        if (response.success && response.data?.url) {
-          const newItem: MediaItem = {
-            url: response.data.url,
-            id: response.data.id || `img-${Date.now()}`,
-            role: role as MediaRole,
-            alt: altText,
-          }
-          onChange([...media, newItem])
-          onToast?.('Imagen subida correctamente', 'success')
-        } else {
-          onToast?.(response.error || 'No se pudo subir la imagen al servidor.', 'error')
+      if (response.success && response.data?.url) {
+        const newItem: MediaItem = {
+          url: response.data.url,
+          id: response.data.id || `img-${Date.now()}`,
+          role: role as MediaRole,
+          alt: altText,
         }
+        onChange([...media, newItem])
+        onToast?.('Imagen subida correctamente', 'success')
+      } else {
+        onToast?.(response.error || 'No se pudo subir la imagen al servidor.', 'error')
       }
-      reader.readAsDataURL(file)
     } catch {
       onToast?.('Error al procesar el archivo', 'error')
     } finally {
@@ -77,19 +83,71 @@ export default function MediaUploader({ entityType, entityId, media = [], onChan
     }
   }
 
-  const setRole = (index: number, role: MediaRole) => {
-    const updated = media.map((item, i) => {
-      if (role === 'cover') {
-        return { ...item, role: i === index ? ('cover' as MediaRole) : ('gallery' as MediaRole) }
+  const setRole = async (index: number, role: MediaRole) => {
+    const item = media[index]
+    if (item?.id && !item.id.startsWith('fallback')) {
+      try {
+        const response = await cmsApi.updateMediaRole(item.id, role)
+        if (!response.success) {
+          onToast?.(response.error || 'No se pudo actualizar el rol de la imagen', 'error')
+          return
+        }
+      } catch {
+        onToast?.('Error al actualizar el rol', 'error')
+        return
       }
-      return i === index ? { ...item, role } : item
+    }
+
+    const updated = media.map((m, i) => {
+      if (role === 'cover') {
+        return { ...m, role: i === index ? ('cover' as MediaRole) : ('gallery' as MediaRole) }
+      }
+      return i === index ? { ...m, role } : m
     })
+    onChange(updated)
+    onToast?.('Rol de imagen actualizado', 'success')
+  }
+
+  const handleAltBlur = async (index: number, newAlt: string) => {
+    const item = media[index]
+    if (!item || item.alt === newAlt) return
+
+    if (item.id && !item.id.startsWith('fallback')) {
+      try {
+        await cmsApi.updateMediaAlt(item.id, newAlt)
+      } catch {
+        onToast?.('No se pudo guardar el texto alternativo', 'error')
+      }
+    }
+
+    const updated = media.map((m, i) => (i === index ? { ...m, alt: newAlt } : m))
     onChange(updated)
   }
 
-  const removeMedia = (index: number) => {
+  const archiveMedia = async (index: number) => {
+    const item = media[index]
+    if (!item) return
+
+    if (!window.confirm('¿Confirma que desea quitar esta imagen?')) {
+      return
+    }
+
+    if (item.id && !item.id.startsWith('fallback')) {
+      try {
+        const response = await cmsApi.archiveMedia(item.id)
+        if (!response.success) {
+          onToast?.(response.error || 'No se pudo quitar la imagen', 'error')
+          return
+        }
+      } catch {
+        onToast?.('Error al quitar la imagen', 'error')
+        return
+      }
+    }
+
     const updated = media.filter((_, i) => i !== index)
     onChange(updated)
+    onToast?.('Imagen quitada correctamente', 'success')
   }
 
   return (
@@ -102,12 +160,12 @@ export default function MediaUploader({ entityType, entityId, media = [], onChan
         <span style={{ fontSize: '0.8rem', color: '#746b64' }}>Formatos: JPG, PNG, WEBP (Max 8MB)</span>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '1rem', marginTop: '0.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '1rem', marginTop: '0.5rem' }}>
         {media.map((item, index) => (
           <div key={item.id || index} style={{ border: '1px solid #ded5cc', background: '#ffffff', padding: '0.5rem', borderRadius: 0, position: 'relative' }}>
             <img src={item.url} alt={item.alt || ''} style={{ width: '100%', height: '110px', objectFit: 'cover' }} />
 
-            <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+            <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
               <select
                 value={item.role || 'gallery'}
                 onChange={(e) => setRole(index, e.target.value as MediaRole)}
@@ -120,12 +178,20 @@ export default function MediaUploader({ entityType, entityId, media = [], onChan
                 <option value="signature">{LABELS.mediaRole.signature}</option>
               </select>
 
+              <input
+                type="text"
+                placeholder="Texto alt / descripción"
+                defaultValue={item.alt || ''}
+                onBlur={(e) => handleAltBlur(index, e.target.value)}
+                style={{ fontSize: '0.75rem', padding: '0.25rem', border: '1px solid #ded5cc' }}
+              />
+
               <button
                 type="button"
-                onClick={() => removeMedia(index)}
-                style={{ fontSize: '0.75rem', color: '#d32f2f', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                onClick={() => archiveMedia(index)}
+                style={{ fontSize: '0.75rem', color: '#d32f2f', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', marginTop: '0.25rem' }}
               >
-                Eliminar
+                Quitar imagen
               </button>
             </div>
           </div>

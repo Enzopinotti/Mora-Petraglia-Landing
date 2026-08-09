@@ -12,18 +12,17 @@ async function fetchCms<T = any>(action: string, payload?: Record<string, any>):
     const token = cmsAuth.getToken()
     const url = new URL(CMS_URL)
     url.searchParams.set('action', action)
-    if (token) {
-      url.searchParams.set('token', token)
-    }
 
+    // Si hay token o payload, realizar POST enviando token en el body para no exponerlo en la URL
+    const isPost = Boolean(payload || token)
     const options: RequestInit = {
-      method: payload ? 'POST' : 'GET',
+      method: isPost ? 'POST' : 'GET',
       headers: {
         'Content-Type': 'text/plain;charset=utf-8',
       },
     }
 
-    if (payload) {
+    if (isPost) {
       options.body = JSON.stringify({ action, token, ...payload })
     }
 
@@ -64,8 +63,28 @@ export const cmsApi = {
     return fetchCms<Product>(action, { product })
   },
 
-  async deleteProduct(id: string): Promise<ApiResponse<void>> {
+  async setProductStatus(id: string, status: string): Promise<ApiResponse<void>> {
+    return fetchCms('updateProductStatus', { id, status })
+  },
+
+  async publishProduct(id: string): Promise<ApiResponse<void>> {
+    return this.setProductStatus(id, 'published')
+  },
+
+  async hideProduct(id: string): Promise<ApiResponse<void>> {
+    return this.setProductStatus(id, 'hidden')
+  },
+
+  async archiveProduct(id: string): Promise<ApiResponse<void>> {
     return fetchCms('deleteProduct', { id })
+  },
+
+  async restoreProduct(id: string): Promise<ApiResponse<void>> {
+    return this.setProductStatus(id, 'draft')
+  },
+
+  async markProductSold(id: string): Promise<ApiResponse<void>> {
+    return this.setProductStatus(id, 'sold')
   },
 
   // Projects CRUD
@@ -74,8 +93,24 @@ export const cmsApi = {
     return fetchCms<Project>(action, { project })
   },
 
-  async deleteProject(id: string): Promise<ApiResponse<void>> {
+  async setProjectStatus(id: string, status: string): Promise<ApiResponse<void>> {
+    return fetchCms('updateProjectStatus', { id, status })
+  },
+
+  async publishProject(id: string): Promise<ApiResponse<void>> {
+    return this.setProjectStatus(id, 'published')
+  },
+
+  async hideProject(id: string): Promise<ApiResponse<void>> {
+    return this.setProjectStatus(id, 'hidden')
+  },
+
+  async archiveProject(id: string): Promise<ApiResponse<void>> {
     return fetchCms('deleteProject', { id })
+  },
+
+  async restoreProject(id: string): Promise<ApiResponse<void>> {
+    return this.setProjectStatus(id, 'draft')
   },
 
   // Events CRUD
@@ -84,8 +119,24 @@ export const cmsApi = {
     return fetchCms<EventItem>(action, { event })
   },
 
-  async deleteEvent(id: string): Promise<ApiResponse<void>> {
+  async setEventStatus(id: string, status: string): Promise<ApiResponse<void>> {
+    return fetchCms('updateEventStatus', { id, status })
+  },
+
+  async publishEvent(id: string): Promise<ApiResponse<void>> {
+    return this.setEventStatus(id, 'published')
+  },
+
+  async hideEvent(id: string): Promise<ApiResponse<void>> {
+    return this.setEventStatus(id, 'hidden')
+  },
+
+  async archiveEvent(id: string): Promise<ApiResponse<void>> {
     return fetchCms('deleteEvent', { id })
+  },
+
+  async restoreEvent(id: string): Promise<ApiResponse<void>> {
+    return this.setEventStatus(id, 'draft')
   },
 
   // Content & Settings
@@ -97,7 +148,7 @@ export const cmsApi = {
     return fetchCms('updateSettings', { settings })
   },
 
-  // Media Upload (Apps Script compatible base64 / payload)
+  // Media Operations
   async uploadMedia(fileData: {
     fileName: string
     mimeType: string
@@ -108,5 +159,17 @@ export const cmsApi = {
     altText?: string
   }): Promise<ApiResponse<{ url: string; id?: string }>> {
     return fetchCms('uploadMedia', fileData)
+  },
+
+  async updateMediaRole(id: string, role: string): Promise<ApiResponse<void>> {
+    return fetchCms('updateMediaRole', { id, role })
+  },
+
+  async updateMediaAlt(id: string, altText: string): Promise<ApiResponse<void>> {
+    return fetchCms('updateMediaAlt', { id, altText })
+  },
+
+  async archiveMedia(id: string): Promise<ApiResponse<void>> {
+    return fetchCms('archiveMedia', { id })
   },
 }

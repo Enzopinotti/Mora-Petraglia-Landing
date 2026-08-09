@@ -39,12 +39,14 @@ export const LABELS = {
     draft: 'Borrador',
     published: 'Publicado',
     hidden: 'Oculto',
+    sold: 'Vendido',
+    out_of_stock: 'Sin stock',
     archived: 'Archivado',
   },
   availability: {
+    available: 'En stock',
     sold: 'Vendido',
     out_of_stock: 'Sin stock',
-    available: 'En stock',
     on_request: 'Consultar',
   },
   subtypeProduct: {
@@ -52,6 +54,12 @@ export const LABELS = {
     original_artwork: 'Obra original',
     physical_product: 'Producto',
     service: 'Servicio',
+    other: 'Otro',
+  },
+  subtypeProject: {
+    mural: 'Mural',
+    installation: 'Instalación',
+    collaboration: 'Colaboración',
     other: 'Otro',
   },
   subtypeEvent: {

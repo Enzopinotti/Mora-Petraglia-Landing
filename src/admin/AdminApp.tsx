@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { cmsApi } from '../cms/api'
 import { cmsAuth } from '../cms/auth'
+import { useCms } from '../context/CmsContext'
 
 import AdminDashboard from './AdminDashboard'
 import AdminLayout from './AdminLayout'
 import AdminLogin from './AdminLogin'
-import { AdminToast } from './components/UIComponents'
+import { AdminLoader, AdminToast } from './components/UIComponents'
 import ContentEditor from './content/ContentEditor'
 import EventList from './events/EventList'
 import ProductList from './products/ProductList'
@@ -15,7 +16,9 @@ import SettingsEditor from './settings/SettingsEditor'
 import './styles/admin.scss'
 
 export default function AdminApp() {
+  const { refetch } = useCms()
   const [authenticated, setAuthenticated] = useState<boolean>(false)
+  const [loggingIn, setLoggingIn] = useState<boolean>(false)
   const [currentTab, setCurrentTab] = useState<string>('dashboard')
   const [toast, setToast] = useState<{ message: string | null; type: 'info' | 'success' | 'error' }>({
     message: null,
@@ -33,9 +36,17 @@ export default function AdminApp() {
     }, 3500)
   }
 
-  const handleLoginSuccess = () => {
-    setAuthenticated(true)
-    triggerToast('¡Bienvenida al panel de administración!', 'success')
+  const handleLoginSuccess = async () => {
+    setLoggingIn(true)
+    try {
+      await refetch()
+      setAuthenticated(true)
+      triggerToast('¡Bienvenida al panel de administración!', 'success')
+    } catch {
+      triggerToast('Error al cargar datos administrativos.', 'error')
+    } finally {
+      setLoggingIn(false)
+    }
   }
 
   const handleLogout = async () => {
@@ -47,6 +58,14 @@ export default function AdminApp() {
       setAuthenticated(false)
       triggerToast('Sesión cerrada correctamente', 'info')
     }
+  }
+
+  if (loggingIn) {
+    return (
+      <div className="admin-app" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+        <AdminLoader text="Cargando panel de administración..." />
+      </div>
+    )
   }
 
   if (!authenticated) {

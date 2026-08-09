@@ -1,6 +1,6 @@
 export type SubtypeProduct = 'print' | 'original_artwork' | 'physical_product' | 'service' | 'other'
-export type ProductStatus = 'draft' | 'published' | 'hidden' | 'archived'
-export type ProductAvailability = 'sold' | 'out_of_stock' | 'available' | 'on_request'
+export type ProductStatus = 'draft' | 'published' | 'hidden' | 'sold' | 'out_of_stock' | 'archived'
+export type ProductAvailability = 'available' | 'sold' | 'out_of_stock' | 'on_request'
 
 export type MediaRole = 'cover' | 'gallery' | 'detail' | 'ambient' | 'signature'
 
@@ -35,7 +35,7 @@ export interface Product {
   edition_total?: number | string
   signed?: boolean
   certificate?: boolean
-  availability?: string
+  availability?: ProductAvailability | string
   status: ProductStatus
   featured?: boolean
   sort_order?: number
@@ -45,7 +45,7 @@ export interface Product {
   image?: string // Fallback compatibility
 }
 
-export type SubtypeProject = 'mural' | 'intervention' | 'series' | 'other'
+export type SubtypeProject = 'mural' | 'installation' | 'collaboration' | 'other'
 
 export interface Project {
   id: string
