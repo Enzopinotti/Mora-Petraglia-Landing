@@ -108,20 +108,32 @@ export default function MediaUploader({ entityType, entityId, media = [], onChan
     onToast?.('Rol de imagen actualizado', 'success')
   }
 
-  const handleAltBlur = async (index: number, newAlt: string) => {
+  const handleAltBlur = async (index: number, rawAlt: string) => {
     const item = media[index]
-    if (!item || item.alt === newAlt) return
+    if (!item) return
+
+    const normalizedAlt = rawAlt.trim()
+
+    // No enviar request si el valor no cambió
+    if (item.alt === normalizedAlt) return
 
     if (item.id && !item.id.startsWith('fallback')) {
       try {
-        await cmsApi.updateMediaAlt(item.id, newAlt)
+        const response = await cmsApi.updateMediaAlt(item.id, normalizedAlt)
+        if (!response.success) {
+          onToast?.(response.error || 'No se pudo guardar el texto alternativo', 'error')
+          return
+        }
       } catch {
-        onToast?.('No se pudo guardar el texto alternativo', 'error')
+        onToast?.('Error al guardar el texto alternativo', 'error')
+        return
       }
     }
 
-    const updated = media.map((m, i) => (i === index ? { ...m, alt: newAlt } : m))
+    // Solo modificar estado local después de éxito
+    const updated = media.map((m, i) => (i === index ? { ...m, alt: normalizedAlt } : m))
     onChange(updated)
+    onToast?.('Texto alternativo guardado', 'success')
   }
 
   const archiveMedia = async (index: number) => {
