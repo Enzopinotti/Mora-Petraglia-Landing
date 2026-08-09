@@ -1,0 +1,129 @@
+import { useState, type ChangeEvent } from 'react'
+import { cmsApi } from '../../cms/api'
+import { LABELS } from '../../cms/helpers'
+import type { MediaItem, MediaRole } from '../../cms/types'
+
+interface MediaUploaderProps {
+  media: MediaItem[]
+  onChange: (updatedMedia: MediaItem[]) => void
+  onToast?: (msg: string, type?: 'success' | 'error') => void
+}
+
+export default function MediaUploader({ media = [], onChange, onToast }: MediaUploaderProps) {
+  const [uploading, setUploading] = useState(false)
+
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    const file = files[0]
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      onToast?.('Solo se permiten imágenes JPEG, PNG o WEBP', 'error')
+      return
+    }
+
+    if (file.size > 8 * 1024 * 1024) {
+      onToast?.('La imagen no puede superar los 8MB', 'error')
+      return
+    }
+
+    setUploading(true)
+    try {
+      const reader = new FileReader()
+      reader.onload = async () => {
+        const base64Str = (reader.result as string).split(',')[1]
+        const response = await cmsApi.uploadMedia({
+          fileName: file.name,
+          mimeType: file.type,
+          base64: base64Str,
+          role: media.length === 0 ? 'cover' : 'gallery',
+        })
+
+        if (response.success && response.data?.url) {
+          const newItem: MediaItem = {
+            url: response.data.url,
+            id: response.data.id || `img-${Date.now()}`,
+            role: media.length === 0 ? 'cover' : 'gallery',
+            alt: file.name.replace(/\.[^/.]+$/, ''),
+          }
+          onChange([...media, newItem])
+          onToast?.('Imagen subida correctamente', 'success')
+        } else {
+          // Si no hay endpoint activo aún, agregar preview local
+          const localUrl = URL.createObjectURL(file)
+          const newItem: MediaItem = {
+            url: localUrl,
+            id: `local-${Date.now()}`,
+            role: media.length === 0 ? 'cover' : 'gallery',
+            alt: file.name,
+          }
+          onChange([...media, newItem])
+          onToast?.('Imagen agregada localmente', 'success')
+        }
+      }
+      reader.readAsDataURL(file)
+    } catch {
+      onToast?.('Error al procesar el archivo', 'error')
+    } finally {
+      setUploading(false)
+      e.target.value = ''
+    }
+  }
+
+  const setRole = (index: number, role: MediaRole) => {
+    const updated = media.map((item, i) => {
+      if (role === 'cover') {
+        return { ...item, role: i === index ? ('cover' as MediaRole) : ('gallery' as MediaRole) }
+      }
+      return i === index ? { ...item, role } : item
+    })
+    onChange(updated)
+  }
+
+  const removeMedia = (index: number) => {
+    const updated = media.filter((_, i) => i !== index)
+    onChange(updated)
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <label className="btn-secondary-admin" style={{ cursor: uploading ? 'not-allowed' : 'pointer' }}>
+          {uploading ? 'Subiendo imagen...' : '📷 Seleccionar e Imagen'}
+          <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleFileChange} disabled={uploading} style={{ display: 'none' }} />
+        </label>
+        <span style={{ fontSize: '0.8rem', color: '#746b64' }}>Formatos: JPG, PNG, WEBP (Max 8MB)</span>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '1rem', marginTop: '0.5rem' }}>
+        {media.map((item, index) => (
+          <div key={item.id || index} style={{ border: '1px solid #ded5cc', background: '#ffffff', padding: '0.5rem', borderRadius: 0, position: 'relative' }}>
+            <img src={item.url} alt={item.alt || ''} style={{ width: '100%', height: '110px', objectFit: 'cover' }} />
+
+            <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+              <select
+                value={item.role || 'gallery'}
+                onChange={(e) => setRole(index, e.target.value as MediaRole)}
+                style={{ fontSize: '0.75rem', padding: '0.25rem', border: '1px solid #ded5cc' }}
+              >
+                <option value="cover">{LABELS.mediaRole.cover}</option>
+                <option value="gallery">{LABELS.mediaRole.gallery}</option>
+                <option value="detail">{LABELS.mediaRole.detail}</option>
+                <option value="ambient">{LABELS.mediaRole.ambient}</option>
+                <option value="signature">{LABELS.mediaRole.signature}</option>
+              </select>
+
+              <button
+                type="button"
+                onClick={() => removeMedia(index)}
+                style={{ fontSize: '0.75rem', color: '#d32f2f', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}

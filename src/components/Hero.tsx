@@ -1,9 +1,21 @@
 import { useRef } from 'react'
 import gsap from 'gsap'
 import { useGSAP } from '@gsap/react'
+import { useCms } from '../context/CmsContext'
 
 export default function Hero() {
   const containerRef = useRef<HTMLElement>(null)
+  const { getContent } = useCms()
+
+  const kicker = getContent('hero.kicker', 'Artista plástica y muralista · La Plata')
+  const titlePart1 = getContent('hero.title_part1', 'Mora')
+  const titlePart2 = getContent('hero.title_part2', 'Petraglia')
+  const description = getContent(
+    'hero.description',
+    'Retratos pop, murales y cultura popular argentina en una obra de color intenso, memoria urbana y personajes que vuelven a mirar desde la calle.',
+  )
+  const ctaPrimary = getContent('hero.cta_primary', 'Ver prints')
+  const ctaSecondary = getContent('hero.cta_secondary', 'Ver obra')
 
   useGSAP(
     () => {
@@ -76,20 +88,18 @@ export default function Hero() {
 
       <div className="container hero__content">
         <div className="hero__copy">
-          <span className="hero__kicker">Artista plástica y muralista · La Plata</span>
+          <span className="hero__kicker">{kicker}</span>
           <h1 className="hero__title">
-            <span>Mora</span>
-            <span>Petraglia</span>
+            <span>{titlePart1}</span>
+            <span>{titlePart2}</span>
           </h1>
-          <p className="hero__description">
-            Retratos pop, murales y cultura popular argentina en una obra de color intenso, memoria urbana y personajes que vuelven a mirar desde la calle.
-          </p>
+          <p className="hero__description">{description}</p>
           <div className="hero__actions">
             <a href="#prints" className="btn btn-primary">
-              Ver prints
+              {ctaPrimary}
             </a>
             <a href="#obra" className="btn btn-light">
-              Ver obra
+              {ctaSecondary}
             </a>
           </div>
         </div>

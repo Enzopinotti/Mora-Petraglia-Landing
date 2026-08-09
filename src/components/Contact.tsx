@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useCms } from '../context/CmsContext'
 
 type QuoteRequestDetail = {
   type?: string
@@ -6,9 +7,17 @@ type QuoteRequestDetail = {
 }
 
 export default function Contact() {
+  const { getContent } = useCms()
   const messageRef = useRef<HTMLTextAreaElement>(null)
   const [formState, setFormState] = useState({ name: '', email: '', phone: '', type: 'obra', message: '' })
   const [sent, setSent] = useState(false)
+
+  const kicker = getContent('contacto.kicker', 'Contacto')
+  const title = getContent('contacto.title', 'Encargos, obra disponible y proyectos.')
+  const copy = getContent(
+    'contacto.copy',
+    'Dejá una consulta para prints, obra original, murales privados o propuestas de exhibición. Para presupuestos, sumá teléfono, medidas, ubicación y una descripción breve.',
+  )
 
   useEffect(() => {
     const handleQuoteRequest = (event: Event) => {
@@ -37,13 +46,11 @@ export default function Contact() {
     <section id="contacto" className="contact" aria-labelledby="contacto-title">
       <div className="container contact__grid">
         <div className="contact__copy" data-reveal>
-          <p className="section-kicker">Contacto</p>
+          <p className="section-kicker">{kicker}</p>
           <h2 id="contacto-title" className="section-title">
-            Encargos, obra disponible y proyectos.
+            {title}
           </h2>
-          <p>
-            Dejá una consulta para prints, obra original, murales privados o propuestas de exhibición. Para presupuestos, sumá teléfono, medidas, ubicación y una descripción breve.
-          </p>
+          <p>{copy}</p>
         </div>
 
         {sent ? (

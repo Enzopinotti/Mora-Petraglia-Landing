@@ -1,6 +1,13 @@
+import { useCms } from '../context/CmsContext'
 import { SOCIAL_LINKS } from '../data/landing'
 
 export default function Footer() {
+  const { getContent, getSetting } = useCms()
+
+  const instagramUrl = getSetting('instagram', SOCIAL_LINKS.instagram)
+  const contactEmail = getSetting('email', 'contacto@morapetraglia.com')
+  const footerLocation = getContent('footer.location', 'La Plata, Buenos Aires, Argentina.')
+
   return (
     <footer className="main-footer">
       <div className="container">
@@ -9,10 +16,10 @@ export default function Footer() {
             <h3>Mora Petraglia</h3>
             <p>
               Artista plástica y muralista.<br />
-              La Plata, Buenos Aires, Argentina.
+              {footerLocation}
             </p>
             <div className="main-footer__socials">
-              <a href={SOCIAL_LINKS.instagram} target="_blank" rel="noreferrer">Instagram</a>
+              <a href={instagramUrl} target="_blank" rel="noreferrer">Instagram</a>
               <a href="#contacto">Contacto</a>
             </div>
           </div>
@@ -40,7 +47,7 @@ export default function Footer() {
           <div className="main-footer__column">
             <h4>Contacto</h4>
             <ul>
-              <li><a href={SOCIAL_LINKS.mail}>contacto@morapetraglia.com</a></li>
+              <li><a href={`mailto:${contactEmail}`}>{contactEmail}</a></li>
               <li><span>La Plata, Argentina</span></li>
             </ul>
           </div>

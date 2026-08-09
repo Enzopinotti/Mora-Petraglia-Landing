@@ -1,8 +1,9 @@
-import { useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
 import { useGSAP } from '@gsap/react'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
+import AdminApp from './admin/AdminApp'
 import AboutMora from './components/AboutMora'
 import Contact from './components/Contact'
 import Exhibitions from './components/Exhibitions'
@@ -12,10 +13,11 @@ import Header from './components/Header'
 import Hero from './components/Hero'
 import Intro from './components/Intro'
 import Prints from './components/Prints'
+import { CmsProvider } from './context/CmsContext'
 
 gsap.registerPlugin(useGSAP, ScrollTrigger)
 
-export default function App() {
+function LandingContent() {
   const appRef = useRef<HTMLDivElement>(null)
 
   useGSAP(
@@ -121,5 +123,23 @@ export default function App() {
       <Contact />
       <Footer />
     </div>
+  )
+}
+
+export default function App() {
+  const [isAdmin, setIsAdmin] = useState<boolean>(() => window.location.pathname.startsWith('/admin'))
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setIsAdmin(window.location.pathname.startsWith('/admin'))
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
+
+  return (
+    <CmsProvider>
+      {isAdmin ? <AdminApp /> : <LandingContent />}
+    </CmsProvider>
   )
 }

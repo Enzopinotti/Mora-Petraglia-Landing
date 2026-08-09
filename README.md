@@ -1,8 +1,28 @@
-# Mora Petraglia — Landing
+# Mora Petraglia — Landing & Panel CMS
 
-Landing responsive para Mora Petraglia, artista plástica y muralista de La Plata.
+Aplicación para Mora Petraglia, artista plástica y muralista de La Plata.
+Incluye landing pública dinámica y panel de administración privado `/admin` conectado al backend existente de Google Apps Script.
 
-El sitio está migrado a una estructura limpia de Vite + React + TypeScript + Sass, con animaciones GSAP, hero con video y secciones reales para obra, prints, murales, sobre Mora, exhibiciones y contacto.
+## Arquitectura
+
+- **Frontend**: React + TypeScript + Vite + Sass + GSAP (Landing pública + Panel `/admin`)
+- **Backend**: Google Apps Script (Servicio API HTTP)
+- **Base de Datos**: Google Sheets
+- **Media**: Google Drive
+- **Routing**: Detección dinámica `/` vs `/admin`
+
+## Variables de Entorno
+
+Crear un archivo `.env` en la raíz del proyecto basándose en `.env.example`:
+
+```env
+VITE_MORA_CMS_URL=https://script.google.com/macros/s/XXXXXXX/exec
+```
+
+## Rutas Principales
+
+- `/`: Landing pública (retiene 100% de la identidad visual, animaciones GSAP, videos y responsive actual; consume datos de Apps Script con fallback a `src/data/landing.ts`).
+- `/admin`: Panel administrativo (autenticación contra Apps Script, gestión CRUD de productos/obras, murales, exhibiciones, edición de textos por secciones y configuración general).
 
 ## Desarrollo
 
@@ -11,33 +31,3 @@ npm install
 npm run dev
 npm run build
 ```
-
-## Videos del hero
-
-Los videos existentes se mantienen en:
-
-- `public/videos/hero-desktop.mp4`
-- `public/videos/hero-mobile.mp4`
-- `public/videos/hero-poster.jpg`
-
-No hace falta moverlos. El hero ahora usa WebM primero y conserva esos MP4 como respaldo:
-
-- `public/videos/hero-desktop.webm`
-- `public/videos/hero-mobile.webm`
-- `public/videos/hero-poster.webp`
-
-El frame optimizado está en `public/videos/frames/hero-frame-01.webp`.
-
-## Carpetas para próximos assets
-
-- `src/assets/images/hero/`
-- `src/assets/images/works/`
-- `src/assets/images/prints/`
-- `src/assets/images/murals/`
-- `src/assets/images/exhibitions/`
-- `src/assets/images/textures/`
-- `public/videos/process/`
-- `public/videos/exhibitions/`
-- `public/videos/social/`
-
-La lista de material pendiente está en `ASSETS_PENDIENTES.md`.

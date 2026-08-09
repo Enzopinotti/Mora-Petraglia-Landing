@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-
+import { useCms } from '../context/CmsContext'
 import { SOCIAL_LINKS } from '../data/landing'
 
 const NAV_ITEMS = [
@@ -13,8 +13,15 @@ const NAV_ITEMS = [
 ]
 
 export default function Header() {
+  const { getContent, getSetting } = useCms()
   const [isOverHero, setIsOverHero] = useState(true)
   const [menuOpen, setMenuOpen] = useState(false)
+
+  const announcementText = getContent(
+    'header.announcement',
+    'Prints de edición limitada disponibles · Envíos a Argentina y exterior',
+  )
+  const instagramUrl = getSetting('instagram', SOCIAL_LINKS.instagram)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -46,9 +53,7 @@ export default function Header() {
         menuOpen ? 'main-header--open' : ''
       }`}
     >
-      <div className="main-header__announcement">
-        Prints de edición limitada disponibles · Envíos a Argentina y exterior
-      </div>
+      <div className="main-header__announcement">{announcementText}</div>
 
       <div className="main-header__bar">
         <div className="container main-header__inner">
@@ -65,7 +70,7 @@ export default function Header() {
           </nav>
 
           <div className="main-header__actions">
-            <a className="main-header__social" href={SOCIAL_LINKS.instagram} target="_blank" rel="noreferrer">
+            <a className="main-header__social" href={instagramUrl} target="_blank" rel="noreferrer">
               Instagram
             </a>
             <button
@@ -89,7 +94,7 @@ export default function Header() {
               {item.label}
             </a>
           ))}
-          <a href={SOCIAL_LINKS.instagram} target="_blank" rel="noreferrer" onClick={closeMenu}>
+          <a href={instagramUrl} target="_blank" rel="noreferrer" onClick={closeMenu}>
             Instagram
           </a>
         </nav>
