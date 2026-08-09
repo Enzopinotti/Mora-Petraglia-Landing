@@ -48,7 +48,7 @@ export const cmsApi = {
     return fetchCms<CmsBootstrap>('bootstrap')
   },
 
-  async login(password: string): Promise<ApiResponse<{ token: string; user?: string }>> {
+  async login(password: string): Promise<ApiResponse<{ token: string; expiresAt?: number; user?: string }>> {
     return fetchCms('login', { password })
   },
 
@@ -98,7 +98,15 @@ export const cmsApi = {
   },
 
   // Media Upload (Apps Script compatible base64 / payload)
-  async uploadMedia(fileData: { fileName: string; mimeType: string; base64: string; entityId?: string; role?: string }): Promise<ApiResponse<{ url: string; id?: string }>> {
+  async uploadMedia(fileData: {
+    fileName: string
+    mimeType: string
+    base64: string
+    entityType: 'products' | 'projects' | 'events'
+    entityId: string
+    role?: string
+    altText?: string
+  }): Promise<ApiResponse<{ url: string; id?: string }>> {
     return fetchCms('uploadMedia', fileData)
   },
 }

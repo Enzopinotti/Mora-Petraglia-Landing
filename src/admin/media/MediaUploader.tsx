@@ -4,13 +4,23 @@ import { LABELS } from '../../cms/helpers'
 import type { MediaItem, MediaRole } from '../../cms/types'
 
 interface MediaUploaderProps {
+  entityType: 'products' | 'projects' | 'events'
+  entityId?: string
   media: MediaItem[]
   onChange: (updatedMedia: MediaItem[]) => void
   onToast?: (msg: string, type?: 'success' | 'error') => void
 }
 
-export default function MediaUploader({ media = [], onChange, onToast }: MediaUploaderProps) {
+export default function MediaUploader({ entityType, entityId, media = [], onChange, onToast }: MediaUploaderProps) {
   const [uploading, setUploading] = useState(false)
+
+  if (!entityId) {
+    return (
+      <div style={{ padding: '0.85rem 1rem', background: '#fbf8f3', border: '1px solid #ded5cc', color: '#746b64', fontSize: '0.85rem' }}>
+        Guardá primero el registro para poder subir imágenes.
+      </div>
+    )
+  }
 
   const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
@@ -32,33 +42,30 @@ export default function MediaUploader({ media = [], onChange, onToast }: MediaUp
       const reader = new FileReader()
       reader.onload = async () => {
         const base64Str = (reader.result as string).split(',')[1]
+        const role = media.length === 0 ? 'cover' : 'gallery'
+        const altText = file.name.replace(/\.[^/.]+$/, '')
+
         const response = await cmsApi.uploadMedia({
           fileName: file.name,
           mimeType: file.type,
           base64: base64Str,
-          role: media.length === 0 ? 'cover' : 'gallery',
+          entityType,
+          entityId,
+          role,
+          altText,
         })
 
         if (response.success && response.data?.url) {
           const newItem: MediaItem = {
             url: response.data.url,
             id: response.data.id || `img-${Date.now()}`,
-            role: media.length === 0 ? 'cover' : 'gallery',
-            alt: file.name.replace(/\.[^/.]+$/, ''),
+            role: role as MediaRole,
+            alt: altText,
           }
           onChange([...media, newItem])
           onToast?.('Imagen subida correctamente', 'success')
         } else {
-          // Si no hay endpoint activo aún, agregar preview local
-          const localUrl = URL.createObjectURL(file)
-          const newItem: MediaItem = {
-            url: localUrl,
-            id: `local-${Date.now()}`,
-            role: media.length === 0 ? 'cover' : 'gallery',
-            alt: file.name,
-          }
-          onChange([...media, newItem])
-          onToast?.('Imagen agregada localmente', 'success')
+          onToast?.(response.error || 'No se pudo subir la imagen al servidor.', 'error')
         }
       }
       reader.readAsDataURL(file)

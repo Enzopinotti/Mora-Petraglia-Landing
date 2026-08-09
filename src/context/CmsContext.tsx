@@ -59,10 +59,12 @@ export function CmsProvider({ children }: { children: ReactNode }) {
     return fallback
   }
 
-  // Fallback mappings if CMS list is empty or API failed
+  // Si el CMS entrega arrays (incluso vacíos si fue una respuesta válida), usarlos directamente sin filtrado frontend.
+  // El backend distingue entre SIN TOKEN (público) y CON TOKEN (panel admin con borradores).
+  // Solo se recurre al fallback de landing.ts si data.products/projects/events es undefined/null.
   const products: Product[] =
-    data.products && data.products.length > 0
-      ? data.products.filter((p) => p.status === 'published' || !p.status)
+    data.products !== undefined && data.products !== null
+      ? data.products
       : PRODUCTS.map((p, idx) => ({
           id: `fallback-p-${idx}`,
           name: p.title,
@@ -77,8 +79,8 @@ export function CmsProvider({ children }: { children: ReactNode }) {
         }))
 
   const projects: Project[] =
-    data.projects && data.projects.length > 0
-      ? data.projects.filter((pr) => pr.status === 'published' || !pr.status)
+    data.projects !== undefined && data.projects !== null
+      ? data.projects
       : MURALS.map((m, idx) => ({
           id: `fallback-m-${idx}`,
           title: m.title,
@@ -92,8 +94,8 @@ export function CmsProvider({ children }: { children: ReactNode }) {
         }))
 
   const events: EventItem[] =
-    data.events && data.events.length > 0
-      ? data.events.filter((e) => e.status === 'published' || !e.status)
+    data.events !== undefined && data.events !== null
+      ? data.events
       : EXHIBITIONS.map((ex, idx) => ({
           id: `fallback-e-${idx}`,
           title: ex.title,

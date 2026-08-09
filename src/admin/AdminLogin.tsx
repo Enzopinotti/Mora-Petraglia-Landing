@@ -19,7 +19,7 @@ export default function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
     try {
       const response = await cmsApi.login(password)
       if (response.success && response.data?.token) {
-        cmsAuth.setSession(response.data.token, undefined, response.data.user)
+        cmsAuth.setSession(response.data.token, response.data.expiresAt, response.data.user)
         onLoginSuccess()
       } else {
         setError(response.error || 'Contraseña incorrecta o sesión inválida.')

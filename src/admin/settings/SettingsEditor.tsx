@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { cmsApi } from '../../cms/api'
 import { useCms } from '../../context/CmsContext'
 import { SOCIAL_LINKS } from '../../data/landing'
 
@@ -24,8 +25,13 @@ export default function SettingsEditor({ onToast }: SettingsEditorProps) {
     e.preventDefault()
     setSaving(true)
     try {
-      onToast('Configuración guardada correctamente', 'success')
-      refetch()
+      const response = await cmsApi.saveSettings(formState)
+      if (response.success) {
+        onToast('Configuración guardada correctamente', 'success')
+        await refetch()
+      } else {
+        onToast(response.error || 'No se pudo guardar la configuración', 'error')
+      }
     } catch {
       onToast('Error al guardar la configuración', 'error')
     } finally {

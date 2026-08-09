@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { cmsApi } from '../../cms/api'
 import { useCms } from '../../context/CmsContext'
 
 interface ContentEditorProps {
@@ -29,8 +30,13 @@ export default function ContentEditor({ onToast }: ContentEditorProps) {
     e.preventDefault()
     setSaving(true)
     try {
-      onToast('Textos guardados correctamente', 'success')
-      refetch()
+      const response = await cmsApi.saveContent(formState)
+      if (response.success) {
+        onToast('Textos guardados correctamente', 'success')
+        await refetch()
+      } else {
+        onToast(response.error || 'No se pudieron guardar los textos', 'error')
+      }
     } catch {
       onToast('Error al guardar los textos', 'error')
     } finally {

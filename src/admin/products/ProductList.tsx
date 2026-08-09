@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { cmsApi } from '../../cms/api'
 import { formatPrice, getCoverImage, LABELS } from '../../cms/helpers'
 import type { Product, SubtypeProduct } from '../../cms/types'
 import { useCms } from '../../context/CmsContext'
@@ -49,11 +50,14 @@ export default function ProductList({ onToast }: ProductListProps) {
 
     setSaving(true)
     try {
-      // Si estuviéramos guardando contra backend real:
-      // await cmsApi.saveProduct(editingProduct)
-      onToast('Producto guardado correctamente', 'success')
-      setIsModalOpen(false)
-      refetch()
+      const response = await cmsApi.saveProduct(editingProduct)
+      if (response.success) {
+        onToast('Producto guardado correctamente', 'success')
+        setIsModalOpen(false)
+        await refetch()
+      } else {
+        onToast(response.error || 'No se pudo guardar el producto', 'error')
+      }
     } catch {
       onToast('Error al guardar el producto', 'error')
     } finally {
@@ -213,6 +217,8 @@ export default function ProductList({ onToast }: ProductListProps) {
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>Imágenes</label>
                 <MediaUploader
+                  entityType="products"
+                  entityId={editingProduct.id}
                   media={editingProduct.media || []}
                   onChange={(updatedMedia) => setEditingProduct({ ...editingProduct, media: updatedMedia })}
                   onToast={onToast}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { cmsApi } from '../cms/api'
 import { cmsAuth } from '../cms/auth'
 
 import AdminDashboard from './AdminDashboard'
@@ -37,10 +38,15 @@ export default function AdminApp() {
     triggerToast('¡Bienvenida al panel de administración!', 'success')
   }
 
-  const handleLogout = () => {
-    cmsAuth.logout()
-    setAuthenticated(false)
-    triggerToast('Sesión cerrada correctamente', 'info')
+  const handleLogout = async () => {
+    try {
+      await cmsApi.logout()
+    } catch {
+      cmsAuth.logout()
+    } finally {
+      setAuthenticated(false)
+      triggerToast('Sesión cerrada correctamente', 'info')
+    }
   }
 
   if (!authenticated) {
