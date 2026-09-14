@@ -1,0 +1,33 @@
+name: Quality
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mora-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Typecheck, format and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v4.1.7
+      - name: Set up Node.js
+        uses: actions/setup-node@1e60f620b9541d4d2badb9429c44d8f33e46c00a # v4.0.3
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Run repository quality contract
+        run: npm run check
