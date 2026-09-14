@@ -44,16 +44,15 @@ npm run dev
 
 ## Quality gate
 
-El repositorio expone un contrato de calidad reproducible:
+El contrato bloqueante de V1 valida comportamiento reproducible sin mezclar una reescritura mecánica de formato de todo el árbol:
 
 ```bash
 npm ci
 npm run typecheck
-npm run format:check
 npm run build
 ```
 
-También podés ejecutar todo con:
+También podés ejecutar ambos checks con:
 
 ```bash
 npm run check
@@ -61,11 +60,22 @@ npm run check
 
 GitHub Actions ejecuta ese mismo contrato en PRs y pushes a `main` usando Node.js 22 y sin credenciales de Google/Vercel de producción.
 
+### Formato
+
+Oxfmt sigue disponible explícitamente:
+
+```bash
+npm run format
+npm run format:check
+```
+
+El árbol actual tiene formato histórico previo a este quality gate. La normalización completa está separada en una issue dedicada para que pueda revisarse como un commit mecánico y, una vez normalizado el repositorio, `format:check` pase a ser bloqueante sin ocultar cambios funcionales.
+
 ### Qué valida CI hoy
 
 - TypeScript compila sin emitir archivos (`tsc --noEmit`).
-- El código respeta el formateo esperado por Oxfmt.
 - Vite produce un build de producción.
+- Instalación reproducible desde `package-lock.json`.
 
 No se agregan tests vacíos sólo para mostrar un badge verde. La cobertura futura debe enfocarse en contratos reales del CMS: normalización de respuestas, fallback, auth state y mapping de payloads sin depender de servicios Google en vivo.
 
