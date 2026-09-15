@@ -81,11 +81,19 @@ No se agregan tests vacíos sólo para mostrar un badge verde. La cobertura futu
 
 ## Boundary determinístico del CMS
 
-Para mantener CI reproducible:
+El contrato detallado está documentado en [`docs/cms-boundary.md`](./docs/cms-boundary.md).
 
-- las credenciales y endpoints productivos quedan fuera del repositorio;
-- las integraciones Google se tratan como un boundary externo;
-- los tests que se incorporen deben usar fixtures/mocks para representar respuestas válidas, vacías y malformadas;
-- el frontend público no debería depender de disponibilidad en vivo del CMS para poder construir y validarse.
+Las reglas principales son:
+
+- la landing pública usa el bootstrap del CMS cuando responde con éxito;
+- un CMS público no disponible activa fallback local para productos, murales y exhibiciones;
+- un resultado CMS exitoso pero vacío sigue siendo autoritativo: no se mezcla silenciosamente con fallback;
+- `/admin` **no** sustituye datos editables por el fallback público cuando falla el backend;
+- una sesión administrativa válida vive actualmente en `sessionStorage` y los POST autenticados envían el token en el body;
+- media con ids `med_*` se normaliza hacia `/api/media`, que actúa como proxy server-side hacia el backend de imágenes;
+- las credenciales y endpoints productivos quedan fuera del repositorio y del quality gate;
+- los tests futuros deben usar fixtures/mocks para representar respuestas válidas, vacías, fallidas y malformadas.
+
+El documento también deja explícitos los límites actuales: los payloads están tipados en TypeScript pero no tienen validación de esquema en runtime, y la autenticación del panel no se presenta como si utilizara cookies HttpOnly cuando hoy usa `sessionStorage`.
 
 Esto permite que la arquitectura siga siendo realista sin transformar CI en una prueba frágil contra servicios externos.
