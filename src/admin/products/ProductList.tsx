@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { cmsApi } from '../../cms/api'
-import { formatPrice, getCoverImage, LABELS } from '../../cms/helpers'
+import { formatPrice, getCoverImage, LABELS, parseArgentinePrice } from '../../cms/helpers'
 import type { Product, ProductStatus, SubtypeProduct } from '../../cms/types'
 import { useCms } from '../../context/CmsContext'
 import { AdminThumb } from '../components/AdminThumb'
@@ -56,13 +56,19 @@ export default function ProductList({ onToast }: ProductListProps) {
   const handleSave = async (e: FormEvent) => {
     e.preventDefault()
     if (!editingProduct?.name) return
+    const rawPrice = editingProduct.price
+    const price = parseArgentinePrice(rawPrice)
+    if (rawPrice !== undefined && rawPrice !== null && String(rawPrice).trim() !== '' && price === null) {
+      onToast('Ingresá un precio válido, por ejemplo 90.000,50.', 'error')
+      return
+    }
     const isNew = !editingProduct.id
     setSaving(true)
 
     // Normalizar números y cadenas vacías para evitar null accidentales
     const cleanProduct = {
       ...editingProduct,
-      price: editingProduct.price !== '' && editingProduct.price !== undefined ? String(editingProduct.price) : '',
+      price: price === null ? '' : price,
       stock: editingProduct.stock !== undefined && editingProduct.stock !== null ? Number(editingProduct.stock) : 0,
       width: editingProduct.width !== '' && editingProduct.width !== undefined ? String(editingProduct.width) : '',
       height: editingProduct.height !== '' && editingProduct.height !== undefined ? String(editingProduct.height) : '',

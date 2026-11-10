@@ -1,26 +1,39 @@
 import type { MediaItem } from './types'
 
+export function parseArgentinePrice(price: number | string | null | undefined): number | null {
+  if (typeof price === 'number') {
+    return Number.isFinite(price) && price >= 0 ? price : null
+  }
+  if (typeof price !== 'string') return null
+
+  const value = price
+    .replace(/^\s*(?:ARS\s*)?\$?\s*/i, '')
+    .replace(/\s*ARS\s*$/i, '')
+    .trim()
+
+  if (!value) return null
+  if (/^(?:\d{1,3}(?:\.\d{3})+|\d+)(?:,\d{1,2})?$/.test(value)) {
+    const number = Number(value.replace(/\./g, '').replace(',', '.'))
+    return Number.isFinite(number) ? number : null
+  }
+  if (/^\d+\.\d{1,2}$/.test(value)) {
+    const number = Number(value)
+    return Number.isFinite(number) ? number : null
+  }
+  return null
+}
+
 export function formatPrice(price: number | string | null | undefined, currency: string = 'ARS'): string {
-  if (price === null || price === undefined || price === '') {
+  const numericPrice = parseArgentinePrice(price)
+  if (numericPrice === null || numericPrice === 0) {
     return 'Consultar'
   }
 
-  const numericPrice = typeof price === 'string' ? parseFloat(price.replace(/[^0-9.-]+/g, '')) : price
-
-  if (isNaN(numericPrice) || numericPrice === 0) {
-    return 'Consultar'
-  }
-
-  try {
-    const formatted = new Intl.NumberFormat('es-AR', {
-      style: 'decimal',
-      maximumFractionDigits: 0,
-    }).format(numericPrice)
-
-    return `$ ${formatted}${currency === 'ARS' ? '' : ` ${currency}`}`
-  } catch {
-    return `$ ${numericPrice}`
-  }
+  const formatted = new Intl.NumberFormat('es-AR', {
+    style: 'decimal',
+    maximumFractionDigits: 2,
+  }).format(numericPrice)
+  return `$ ${formatted}${currency === 'ARS' ? '' : ` ${currency}`}`
 }
 
 export function getCoverImage(media?: MediaItem[], fallback?: string): string {
