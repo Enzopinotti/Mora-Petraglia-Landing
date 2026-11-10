@@ -69,6 +69,7 @@ El contrato bloqueante de V1 valida comportamiento reproducible sin mezclar una 
 npm ci
 npm run typecheck
 npm run build
+npm test
 ```
 
 También podés ejecutar ambos checks con:
