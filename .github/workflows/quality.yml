@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   quality:
-    name: Typecheck, format and build
+    name: Typecheck, build and CMS tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -31,3 +31,5 @@ jobs:
         run: npm ci
       - name: Run repository quality contract
         run: npm run check
+      - name: Run CMS regression tests
+        run: node --test tests/*.test.mjs
