@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 
 import { cmsApi } from '../cms/api'
 import { cmsAuth } from '../cms/auth'
+import { filterPublicEvents, filterPublicProducts, filterPublicProjects } from '../cms/publicVisibility'
 import type { CmsBootstrap, CmsContent, CmsSettings, EventItem, Product, Project } from '../cms/types'
 import { EXHIBITIONS, MURALS, PRODUCTS } from '../data/landing'
 
@@ -118,10 +119,13 @@ export function CmsProvider({ children }: { children: ReactNode }) {
     return fallback
   }
 
+  // Admin conserva todos los estados; solo la landing pública aplica esta defensa.
+  const isAdminRoute = window.location.pathname.startsWith('/admin')
+
   // Resolver productos
   const products: Product[] =
     source === 'cms' && data?.products !== undefined && data.products !== null
-      ? data.products
+      ? isAdminRoute ? data.products : filterPublicProducts(data.products)
       : source === 'fallback'
       ? PRODUCTS.map((p, idx) => ({
           id: `fallback-p-${idx}`,
@@ -140,7 +144,7 @@ export function CmsProvider({ children }: { children: ReactNode }) {
   // Resolver proyectos (murales)
   const projects: Project[] =
     source === 'cms' && data?.projects !== undefined && data.projects !== null
-      ? data.projects
+      ? isAdminRoute ? data.projects : filterPublicProjects(data.projects)
       : source === 'fallback'
       ? MURALS.map((m, idx) => ({
           id: `fallback-m-${idx}`,
@@ -158,7 +162,7 @@ export function CmsProvider({ children }: { children: ReactNode }) {
   // Resolver exhibiciones
   const events: EventItem[] =
     source === 'cms' && data?.events !== undefined && data.events !== null
-      ? data.events
+      ? isAdminRoute ? data.events : filterPublicEvents(data.events)
       : source === 'fallback'
       ? EXHIBITIONS.map((ex, idx) => ({
           id: `fallback-e-${idx}`,
