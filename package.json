@@ -10,6 +10,10 @@
     "dev:full": "vercel dev --listen 8443",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
+    "cms:pull": "clasp pull",
+    "cms:status": "clasp status",
+    "cms:push": "clasp push",
+    "cms:deployments": "clasp deployments",
     "typecheck": "tsc --noEmit",
     "check": "npm run typecheck && npm run build"
   },
@@ -20,6 +24,7 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@google/clasp": "^3.4.1",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

@@ -1,0 +1,7 @@
+{
+  "scriptId": "REEMPLAZAR_POR_SCRIPT_ID",
+  "rootDir": "cms",
+  "scriptExtensions": [".gs"],
+  "htmlExtensions": [".html"],
+  "jsonExtensions": [".json"]
+}

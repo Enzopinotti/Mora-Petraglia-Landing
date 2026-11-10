@@ -42,6 +42,25 @@ npm ci
 npm run dev
 ```
 
+### Apps Script
+
+El código descargado del proyecto de Apps Script se conserva en `cms/`.
+Para trabajar con él, autenticá Clasp y copiá `.clasp.example.json` a
+`.clasp.json`, completando el Script ID del proyecto verificado. El archivo
+local y las credenciales de Clasp no se versionan.
+
+```bash
+npm run cms:status
+npm run cms:pull
+npm run cms:deployments
+```
+
+`npm run cms:push` modifica el código remoto: antes de ejecutarlo, verificá
+que el Script ID y el deployment `/exec` configurado en la landing correspondan
+al proyecto correcto, compará las versiones y respaldá el código remoto.
+Un push no equivale a actualizar un deployment versionado. No actualices el
+deployment productivo sin revisar la migración y validar las pruebas.
+
 ## Quality gate
 
 El contrato bloqueante de V1 valida comportamiento reproducible sin mezclar una reescritura mecánica de formato de todo el árbol:
